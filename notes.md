@@ -1,0 +1,1 @@
+Chưa có One-Click Apply (Do đang chạy trên môi trường Web, cần đóng gói Tauri để can thiệp Registry/System).
