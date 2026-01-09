@@ -197,22 +197,27 @@ export const generateStructuredAnimation = async (
 
     try {
         const enhancedPrompt = `
-            You are a Pixel Art Architect. Analyze the provided image and the user's prompt: "${prompt}".
-            Your task is to decompose the image into a "Subject" (the main cursor) and "Effects" (aura, particles, etc.) and create a short animation.
+            You are a Master Cursor Designer & Pixel Art Architect. 
             
-            Return a JSON object containing a sequence of frames. 
-            For each frame, provide a list of "dots" (pixels).
-            
-            Strict Rules:
-            1. Grid size is 32x32. Coordinates x,y must be 0-31.
-            2. 'type' must be 'subject' for the main cursor body, or 'effect' for animations (fire, glow, spin).
-            3. 'opacity' is 0.0 to 1.0.
-            4. Create 4 to 8 frames for a smooth loop.
-            5. Ensure the 'effect' dots move or change opacity to create the animation described.
+            CRITICAL OBJECTIVE: Analyze the provided image and extract its shape and colors with PIXEL-PERFECT FIDELITY for the "subject" layer. 
+            The user's request is: "${prompt}".
+
+            Instructions:
+            1. **Fidelity First**: The "subject" layer must represent the core object from the input image as accurately as possible within a 32x32 grid. Do not simplify the shape unless necessary for the grid size. Use the exact color palette from the image.
+            2. **Smart Decomposition**: 
+               - "subject": The main cursor/pointer body (extracted from the image).
+               - "effect": Animation elements like glowing auras, particles, trails, or shadows that ENHANCE the subject without replacing it.
+            3. **Animation Logic**: Create a smooth, looping sequence of 8-12 frames. 
+               - The "subject" should remain stable or move slightly (e.g., breathing, hovering).
+               - The "effect" layer should handle the dynamic parts of the animation.
+            4. **Hotspot**: Precisely identify the active pixel (tip of the arrow, center of crosshair, etc.).
+            5. **Technical Spec**: 32x32 grid. Coordinates (x,y) from 0-31. Colors in Hex. Opacity 0.0-1.0.
+
+            Your output must be a valid JSON object mirroring this professional preset architecture.
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash', // Using 2.5 Flash for JSON handling capabilities
+            model: 'gemini-3-flash-preview', // Using 2.5 Flash for JSON handling capabilities
             contents: {
                 parts: [
                     {

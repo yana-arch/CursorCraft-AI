@@ -19,9 +19,9 @@ import {
 } from "./utils/layerUtils";
 import {
   generateId,
-  toHexColor,
   processImageToGrid,
 } from "./utils/imageUtils";
+import { convertAIToFrames } from "./utils/aiUtils";
 import { calculateAnimationFrames } from "./utils/animationGenerator";
 import { generateCurFile } from "./utils/curEncoder";
 import { generateAniFile } from "./utils/aniEncoder";
@@ -212,37 +212,19 @@ function App() {
 
   const handleAIStructuredData = useCallback((data: AIAnimationResponse) => {
     if (data.metadata.hotspot) setHotspot(data.metadata.hotspot);
-    const newFrames: Frame[] = data.frames.map((aiFrame) => {
-      const subjectGrid = createEmptyGrid(),
-        effectGrid = createEmptyGrid(),
-        uiGrid = createEmptyGrid();
-      aiFrame.dots.forEach((dot) => {
-        if (dot.x >= 0 && dot.x < 32 && dot.y >= 0 && dot.y < 32) {
-          const color = toHexColor(dot.color, dot.opacity);
-          if (dot.type === "subject") subjectGrid[dot.y][dot.x] = color;
-          else if (dot.type === "effect") effectGrid[dot.y][dot.x] = color;
-          else uiGrid[dot.y][dot.x] = color;
-        }
-      });
-      const layers = [
-        createLayer("AI Effects", effectGrid),
-        createLayer("AI Subject", subjectGrid),
-      ];
-      if (uiGrid.some((row) => row.some((c) => c !== "")))
-        layers.push(createLayer("AI UI/Overlay", uiGrid));
-      return {
-        id: generateId(),
-        layers,
-        duration: data.metadata.fps
-          ? Math.floor(1000 / data.metadata.fps)
-          : 100,
-      };
-    });
+    
+    // Use the new utility to convert AI data to frames
+    const newFrames = convertAIToFrames(data);
+    
     setFrames(newFrames);
     setActiveFrameIndex(0);
     setActiveTab("layers");
-    if (newFrames.length > 0 && newFrames[0].layers.length > 1)
-      setActiveLayerId(newFrames[0].layers[1].id);
+    
+    // Select the primary layer (Subject) by default
+    if (newFrames.length > 0 && newFrames[0].layers.length > 0) {
+        const subjectLayer = newFrames[0].layers.find(l => l.name === 'AI Subject') || newFrames[0].layers[0];
+        setActiveLayerId(subjectLayer.id);
+    }
   }, [setHotspot, setFrames, setActiveFrameIndex, setActiveTab, setActiveLayerId]);
 
   const handleLoadProject = useCallback((project: SavedProject) => {
