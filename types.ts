@@ -43,6 +43,39 @@ export interface SelectionState {
     angle: number; // Current rotation in degrees
 }
 
+// --- Animation Wizard Types ---
+
+export type AnimationMode = 'append' | 'overwrite';
+export type EasingType = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut';
+
+export interface AnimationSettings {
+    defaultMode: AnimationMode;
+    defaultFramesCount: number;
+    copyBackground: boolean;
+}
+
+export interface AnimationParams {
+    framesCount: number;
+    stepX: number;
+    stepY: number;
+    stepAngle: number;
+    stepScale: number;
+    stepOpacity: number;
+    stepHue: number;
+    easing: EasingType;
+    isLoop: boolean;
+    // Special Effects
+    enableSway: boolean;
+    swayAngle: number;
+    swayPeriod: number;
+    swayPivot: 'left' | 'right' | 'top' | 'bottom' | 'center' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+    swayRigidArea: number; // Pixels from pivot that don't move
+    // Path-based deformation
+    enablePathDeform: boolean;
+    pathPivot?: Point;
+    pathPoints: Point[];
+}
+
 // --- AI Structured Data Types ---
 
 export interface AIDot {

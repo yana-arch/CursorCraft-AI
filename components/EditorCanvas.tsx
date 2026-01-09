@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { GridData, ToolType, Point, SelectionState } from '../types';
-import { RotateCw } from 'lucide-react';
+import { RotateCw, Film } from 'lucide-react';
 import { rotatePixelsNN } from '../utils/layerUtils';
 
 interface EditorCanvasProps {
@@ -23,6 +23,14 @@ interface EditorCanvasProps {
   selection: SelectionState | null;
   setSelection: (s: SelectionState | null) => void;
   onRotateSelection: () => void;
+  onOpenWizard?: () => void;
+  // Path Deform Props
+  pathPivot?: Point;
+  pathPoints?: Point[];
+  onSetPathPivot?: (p: Point) => void;
+  onAddPathPoint?: (p: Point) => void;
+  isPickingPivot?: boolean;
+  isPickingPath?: boolean;
 }
 
 const EditorCanvas: React.FC<EditorCanvasProps> = ({
@@ -40,7 +48,14 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
   onionSkinNext,
   selection,
   setSelection,
-  onRotateSelection
+  onRotateSelection,
+  onOpenWizard,
+  pathPivot,
+  pathPoints,
+  onSetPathPivot,
+  onAddPathPoint,
+  isPickingPivot,
+  isPickingPath
 }) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [isDraggingSelection, setIsDraggingSelection] = useState(false);
@@ -197,6 +212,16 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
   const handleMouseDown = (e: React.MouseEvent, x: number, y: number) => {
     e.preventDefault();
     if (e.button !== 0 && e.button !== 2) return;
+
+    if (isPickingPivot && onSetPathPivot) {
+        onSetPathPivot({ x, y });
+        return;
+    }
+
+    if (isPickingPath && onAddPathPoint) {
+        onAddPathPoint({ x, y });
+        return;
+    }
 
     if (activeTool === 'select' || activeTool === 'magicWand') {
         // If clicking inside existing selection -> Move
@@ -479,6 +504,20 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     >
                         <RotateCw size={12} className="text-gray-800" />
                     </button>
+
+                    {/* Animation Wizard Button */}
+                    {onOpenWizard && (
+                        <button
+                            className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-8 h-8 bg-brand-600 rounded-full border border-brand-400 shadow-lg flex items-center justify-center cursor-pointer pointer-events-auto hover:bg-brand-500 hover:scale-110 transition-all z-50 text-white"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onOpenWizard();
+                            }}
+                            title="Auto-Animate Selection"
+                        >
+                            <Film size={14} fill="currentColor" />
+                        </button>
+                    )}
                 </div>
             )}
 
@@ -513,12 +552,29 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                 />
                             )}
 
-                            {hotspot.x === x && hotspot.y === y && (
-                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-                                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse ring-1 ring-white shadow-sm shadow-black" />
-                                </div>
-                            )}
-                        </div>
+                             {hotspot.x === x && hotspot.y === y && (
+                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+                                     <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse ring-1 ring-white shadow-sm shadow-black" />
+                                 </div>
+                             )}
+
+                             {/* Path Pivot Marker */}
+                             {pathPivot?.x === x && pathPivot?.y === y && (
+                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[60]">
+                                     <div className="w-3 h-3 bg-brand-500 rounded-full ring-2 ring-white shadow-lg flex items-center justify-center text-[8px] text-white font-bold">X</div>
+                                 </div>
+                             )}
+
+                             {/* Path Target Points Markers */}
+                             {pathPoints?.map((p, idx) => (
+                                 p.x === x && p.y === y && (
+                                     <div key={`path-${idx}`} className="absolute inset-0 flex items-center justify-center pointer-events-none z-[60]">
+                                         <div className="w-3 h-3 bg-purple-500 rounded-full ring-2 ring-white shadow-lg flex items-center justify-center text-[8px] text-white font-bold">{idx + 1}</div>
+                                     </div>
+                                 )
+                             ))}
+                         </div>
+
                     );
                 })
             ))}
