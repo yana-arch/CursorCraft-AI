@@ -246,30 +246,9 @@ function App() {
   const rotateSelection = useCallback(() => {
     if (!selection) return;
 
-    // Rotate the floating pixels 90 deg clockwise
-    const oldW = selection.w;
-    const oldH = selection.h;
-    const newW = oldH;
-    const newH = oldW;
-    
-    const newPixels = Array(newH).fill(null).map(() => Array(newW).fill(''));
-    
-    for (let y = 0; y < oldH; y++) {
-        for (let x = 0; x < oldW; x++) {
-            // Clockwise: (x, y) -> (h - 1 - y, x) relative to new grid
-            // Destination x = (oldH - 1 - y)
-            // Destination y = x
-            if (selection.floatingPixels[y][x]) {
-                newPixels[x][oldH - 1 - y] = selection.floatingPixels[y][x];
-            }
-        }
-    }
-
     setSelection({
         ...selection,
-        w: newW,
-        h: newH,
-        floatingPixels: newPixels
+        angle: (selection.angle || 0) + 90
     });
   }, [selection]);
 

@@ -40,6 +40,7 @@ export interface SelectionState {
     w: number;
     h: number;
     floatingPixels: GridData; // The cut pixels
+    angle: number; // Current rotation in degrees
 }
 
 // --- AI Structured Data Types ---

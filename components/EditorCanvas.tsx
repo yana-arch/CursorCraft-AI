@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { GridData, ToolType, Point, SelectionState } from '../types';
 import { RotateCw } from 'lucide-react';
+import { rotatePixelsNN } from '../utils/layerUtils';
 
 interface EditorCanvasProps {
   grid: GridData; // This is the ACTIVE LAYER grid
@@ -43,6 +44,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
 }) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [isDraggingSelection, setIsDraggingSelection] = useState(false);
+  const [isRotatingSelection, setIsRotatingSelection] = useState(false);
   const [dragStart, setDragStart] = useState<Point>({ x: 0, y: 0 });
   
   // selectionBox is local (UI only during drag)
@@ -62,15 +64,39 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
       setGrid(prev => {
           const newGrid = prev.map(row => [...row]);
-          // Merge floating pixels back
-          for (let y = 0; y < selection.h; y++) {
-              for (let x = 0; x < selection.w; x++) {
-                  const targetX = selection.x + x;
-                  const targetY = selection.y + y;
-                  if (targetX >= 0 && targetX < GRID_SIZE && targetY >= 0 && targetY < GRID_SIZE) {
-                      const color = selection.floatingPixels[y][x];
+          
+          // 1. Rotate the floating pixels if angle != 0
+          let pixelsToMerge = selection.floatingPixels;
+          let targetX = selection.x;
+          let targetY = selection.y;
+
+          if (Math.abs(selection.angle % 360) > 0.1) {
+              pixelsToMerge = rotatePixelsNN(selection.floatingPixels, selection.angle);
+              
+              // Calculate new top-left to keep the rotation centered
+              // The rotatePixelsNN function returns a grid centered on the original pixels
+              const newH = pixelsToMerge.length;
+              const newW = pixelsToMerge[0].length;
+              
+              const offsetX = (newW - selection.w) / 2;
+              const offsetY = (newH - selection.h) / 2;
+              
+              targetX -= Math.round(offsetX);
+              targetY -= Math.round(offsetY);
+          }
+
+          // 2. Merge floating pixels back
+          const h = pixelsToMerge.length;
+          const w = pixelsToMerge[0].length;
+
+          for (let y = 0; y < h; y++) {
+              for (let x = 0; x < w; x++) {
+                  const gx = targetX + x;
+                  const gy = targetY + y;
+                  if (gx >= 0 && gx < GRID_SIZE && gy >= 0 && gy < GRID_SIZE) {
+                      const color = pixelsToMerge[y][x];
                       if (color) {
-                          newGrid[targetY][targetX] = color;
+                          newGrid[gy][gx] = color;
                       }
                   }
               }
@@ -163,7 +189,8 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
           y: minY,
           w, 
           h,
-          floatingPixels
+          floatingPixels,
+          angle: 0
       });
   };
 
@@ -228,6 +255,23 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
   const handleMouseEnter = (e: React.MouseEvent, x: number, y: number) => {
     if (activeTool === 'select' || activeTool === 'magicWand') {
+        if (isRotatingSelection && selection) {
+            // Calculate center of selection in grid coordinates
+            const centerX = selection.x + selection.w / 2;
+            const centerY = selection.y + selection.h / 2;
+            
+            // Calculate angle between center and current mouse
+            // We subtract 90 degrees because the handle is at the top
+            const rad = Math.atan2(y - centerY, x - centerX);
+            const deg = (rad * 180) / Math.PI + 90;
+            
+            setSelection({
+                ...selection,
+                angle: deg
+            });
+            return;
+        }
+
         if (isDraggingSelection && selection) {
             const dx = x - dragStart.x;
             const dy = y - dragStart.y;
@@ -276,10 +320,11 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
   };
 
   const handleMouseUp = () => {
-    if (activeTool === 'select') {
-        if (isDraggingSelection) {
-            setIsDraggingSelection(false);
-        } else if (isDrawing && selectionBox) {
+    if (activeTool === 'select' || activeTool === 'magicWand') {
+        setIsDraggingSelection(false);
+        setIsRotatingSelection(false);
+        
+        if (activeTool === 'select' && isDrawing && selectionBox) {
             // Finalize selection: Extract pixels
             const floating = Array(selectionBox.h).fill(null).map(() => Array(selectionBox.w).fill(''));
             let hasPixels = false;
@@ -306,15 +351,14 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     y: selectionBox.y,
                     w: selectionBox.w,
                     h: selectionBox.h,
-                    floatingPixels: floating
+                    floatingPixels: floating,
+                    angle: 0
                 });
             }
             // Clear box, show floating instead
             setSelectionBox(null);
             selectionStartRef.current = null;
         }
-    } else if (activeTool === 'magicWand') {
-        setIsDraggingSelection(false);
     }
     setIsDrawing(false);
   };
@@ -344,24 +388,16 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
   // Helper to render a cell's color logic
   const getCellContent = (x: number, y: number) => {
-      // 1. Floating Selection (Top)
-      if (selection && x >= selection.x && x < selection.x + selection.w && y >= selection.y && y < selection.y + selection.h) {
-          const localX = x - selection.x;
-          const localY = y - selection.y;
-          const color = selection.floatingPixels[localY][localX];
-          if (color) return { color, type: 'selection' };
-      }
-
-      // 2. Foreground
+      // 1. Foreground
       if (fgGrid && fgGrid[y][x]) return { color: fgGrid[y][x], type: 'fg' };
 
-      // 3. Active Layer
+      // 2. Active Layer
       if (grid[y][x]) return { color: grid[y][x], type: 'active' };
 
-      // 4. Background
+      // 3. Background
       if (bgGrid && bgGrid[y][x]) return { color: bgGrid[y][x], type: 'bg' };
 
-      // 5. Onion Skins
+      // 4. Onion Skins
       if (onionSkinNext && onionSkinNext[y][x]) return { color: onionSkinNext[y][x], type: 'onionNext' };
       if (onionSkinPrev && onionSkinPrev[y][x]) return { color: onionSkinPrev[y][x], type: 'onionPrev' };
 
@@ -401,9 +437,30 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         left: `${selection.x * 20}px`,
                         top: `${selection.y * 20}px`,
                         width: `${selection.w * 20}px`,
-                        height: `${selection.h * 20}px`
+                        height: `${selection.h * 20}px`,
+                        transform: `rotate(${selection.angle}deg)`,
+                        transformOrigin: 'center center'
                     }}
                 >
+                    {/* Render Floating Pixels */}
+                    <div 
+                        className="absolute inset-0 grid"
+                        style={{
+                            gridTemplateColumns: `repeat(${selection.w}, 1fr)`,
+                            gridTemplateRows: `repeat(${selection.h}, 1fr)`
+                        }}
+                    >
+                        {selection.floatingPixels.map((row, sy) => (
+                            row.map((color, sx) => (
+                                <div 
+                                    key={`${sx}-${sy}`}
+                                    style={{ backgroundColor: color }}
+                                    className="w-full h-full"
+                                />
+                            ))
+                        ))}
+                    </div>
+
                     {/* Handles (Visual Only) */}
                     <div className="absolute -top-1 -left-1 w-2 h-2 bg-white border border-gray-500" />
                     <div className="absolute -top-1 -right-1 w-2 h-2 bg-white border border-gray-500" />
@@ -416,9 +473,9 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         className="rotate-handle absolute -top-8 left-1/2 -translate-x-1/2 w-6 h-6 bg-white rounded-full border border-gray-500 shadow-sm flex items-center justify-center cursor-pointer pointer-events-auto hover:bg-gray-100 hover:scale-110 transition-transform z-50"
                         onMouseDown={(e) => {
                             e.stopPropagation();
-                            onRotateSelection();
+                            setIsRotatingSelection(true);
                         }}
-                        title="Click to Rotate 90°"
+                        title="Drag to Rotate"
                     >
                         <RotateCw size={12} className="text-gray-800" />
                     </button>
