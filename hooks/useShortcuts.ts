@@ -4,17 +4,21 @@ import { ToolType } from '../types';
 interface ShortcutProps {
     undo: () => void;
     redo: () => void;
+    activeTool: ToolType;
     setActiveTool: (tool: ToolType) => void;
     setOnionSkinEnabled: (val: boolean | ((prev: boolean) => boolean)) => void;
     setIsPlaying: (val: boolean | ((prev: boolean) => boolean)) => void;
+    onTransform: (type: 'flipH' | 'flipV' | 'rotate') => void;
 }
 
 export const useShortcuts = ({
     undo,
     redo,
+    activeTool,
     setActiveTool,
     setOnionSkinEnabled,
     setIsPlaying,
+    onTransform,
 }: ShortcutProps) => {
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -59,7 +63,17 @@ export const useShortcuts = ({
                 case "o":
                     setOnionSkinEnabled((prev) => !prev);
                     break;
+                case "r":
+                    if (activeTool !== 'rect') onTransform('rotate');
+                    break;
+                case "h":
+                    if (activeTool !== 'hotspot') onTransform('flipH');
+                    break;
+                case "v":
+                    onTransform('flipV');
+                    break;
                 case " ":
+
                     e.preventDefault();
                     setIsPlaying((prev) => !prev);
                     break;
