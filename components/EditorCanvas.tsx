@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { GridData, ToolType, Point, SelectionState } from '../types';
+import { GridData, ToolType, Point, SelectionState, DrawMode } from '../types';
 import { RotateCw, Film } from 'lucide-react';
-import { rotatePixelsNN } from '../utils/layerUtils';
+import { rotatePixelsNN, createEmptyGrid } from '../utils/layerUtils';
+import { drawLine, drawRect, drawCircle, getBrushPixels } from '../utils/drawUtils';
 
 interface EditorCanvasProps {
   grid: GridData; // This is the ACTIVE LAYER grid
@@ -9,6 +10,8 @@ interface EditorCanvasProps {
   activeTool: ToolType;
   primaryColor: string;
   secondaryColor: string;
+  brushSize: number;
+  drawMode: DrawMode;
   hotspot: Point;
   setHotspot: (p: Point) => void;
   setPrimaryColor: (c: string) => void;
@@ -39,6 +42,8 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
   activeTool,
   primaryColor,
   secondaryColor,
+  brushSize,
+  drawMode,
   hotspot,
   setHotspot,
   setPrimaryColor,
@@ -61,6 +66,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
   const [isDraggingSelection, setIsDraggingSelection] = useState(false);
   const [isRotatingSelection, setIsRotatingSelection] = useState(false);
   const [dragStart, setDragStart] = useState<Point>({ x: 0, y: 0 });
+  const [previewGrid, setPreviewGrid] = useState<GridData | null>(null);
   
   // selectionBox is local (UI only during drag)
   const [selectionBox, setSelectionBox] = useState<{ x: number, y: number, w: number, h: number } | null>(null);
@@ -223,7 +229,15 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
         return;
     }
 
-    if (activeTool === 'select' || activeTool === 'magicWand') {
+    if (activeTool === 'select' || activeTool === 'magicWand' || activeTool === 'line' || activeTool === 'rect' || activeTool === 'circle') {
+        // Handle shapes
+        if (activeTool !== 'select' && activeTool !== 'magicWand') {
+            setIsDrawing(true);
+            setDragStart({ x, y });
+            setPreviewGrid(createEmptyGrid());
+            return;
+        }
+
         // If clicking inside existing selection -> Move
         if (selection && 
             x >= selection.x && x < selection.x + selection.w &&
@@ -339,12 +353,34 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
           const w = Math.abs(x - startX) + 1;
           const h = Math.abs(y - startY) + 1;
           setSelectionBox({ x: minX, y: minY, w, h });
+      } else if (isDrawing && ['line', 'rect', 'circle'].includes(activeTool)) {
+          const pg = createEmptyGrid();
+          const color = e.buttons === 2 ? secondaryColor : primaryColor;
+          if (activeTool === 'line') drawLine(pg, dragStart.x, dragStart.y, x, y, color, brushSize);
+          else if (activeTool === 'rect') drawRect(pg, dragStart.x, dragStart.y, x, y, color, brushSize, drawMode);
+          else if (activeTool === 'circle') drawCircle(pg, dragStart.x, dragStart.y, x, y, color, brushSize, drawMode);
+          setPreviewGrid(pg);
       } else {
           handleMouseEnter(e, x, y);
       }
   };
 
   const handleMouseUp = () => {
+    if (activeTool === 'line' || activeTool === 'rect' || activeTool === 'circle') {
+        if (isDrawing && previewGrid) {
+            setGrid(prev => {
+                const newGrid = prev.map(row => [...row]);
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    for (let x = 0; x < GRID_SIZE; x++) {
+                        if (previewGrid[y][x]) newGrid[y][x] = previewGrid[y][x];
+                    }
+                }
+                return newGrid;
+            });
+        }
+        setPreviewGrid(null);
+    }
+
     if (activeTool === 'select' || activeTool === 'magicWand') {
         setIsDraggingSelection(false);
         setIsRotatingSelection(false);
@@ -396,24 +432,37 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
       }
 
       const newGrid = prevGrid.map((row) => [...row]);
-      if (activeTool === 'eraser') {
-        newGrid[y][x] = ''; // Transparent
-      } else if (activeTool === 'pen') {
-        newGrid[y][x] = isRightClick ? secondaryColor : primaryColor;
+      const color = isRightClick ? secondaryColor : primaryColor;
+
+      if (activeTool === 'eraser' || activeTool === 'pen') {
+          const targetColor = activeTool === 'eraser' ? '' : color;
+          if (brushSize === 1) {
+              newGrid[y][x] = targetColor;
+          } else {
+              const pixels = getBrushPixels(x, y, brushSize);
+              pixels.forEach(p => {
+                  if (newGrid[p.y] && newGrid[p.y][p.x] !== undefined) {
+                      newGrid[p.y][p.x] = targetColor;
+                  }
+              });
+          }
       }
       return newGrid;
     });
-  }, [activeTool, primaryColor, secondaryColor, setGrid]);
+  }, [activeTool, primaryColor, secondaryColor, setGrid, brushSize]);
 
   useEffect(() => {
     window.addEventListener('mouseup', handleMouseUp);
     return () => window.removeEventListener('mouseup', handleMouseUp);
-  }, [activeTool, isDraggingSelection, isDrawing, selectionBox, grid]);
+  }, [activeTool, isDraggingSelection, isDrawing, selectionBox, grid, previewGrid]);
 
 
   // Helper to render a cell's color logic
   const getCellContent = (x: number, y: number) => {
-      // 1. Foreground
+      // 1. Preview (Drawing shapes)
+      if (previewGrid && previewGrid[y][x]) return { color: previewGrid[y][x], type: 'preview' };
+
+      // 2. Foreground
       if (fgGrid && fgGrid[y][x]) return { color: fgGrid[y][x], type: 'fg' };
 
       // 2. Active Layer

@@ -37,6 +37,8 @@ function App() {
     activeTool, setActiveTool,
     primaryColor, setPrimaryColor,
     secondaryColor, setSecondaryColor,
+    brushSize, setBrushSize,
+    drawMode, setDrawMode,
     hotspot, setHotspot,
     isPlaying, setIsPlaying,
     activeTab, setActiveTab,
@@ -303,6 +305,10 @@ function App() {
       <Toolbar
         activeTool={activeTool}
         setTool={setActiveTool}
+        brushSize={brushSize}
+        setBrushSize={setBrushSize}
+        drawMode={drawMode}
+        setDrawMode={setDrawMode}
         onExport={handleExport}
         onExportInstaller={handleExportInstaller}
         onImport={handleImport}
@@ -326,6 +332,8 @@ function App() {
           activeTool={activeTool}
           primaryColor={primaryColor}
           secondaryColor={secondaryColor}
+          brushSize={brushSize}
+          drawMode={drawMode}
           hotspot={hotspot}
           setHotspot={setHotspot}
           setPrimaryColor={setPrimaryColor}

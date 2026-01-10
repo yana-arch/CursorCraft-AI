@@ -1,42 +1,9 @@
 import { Frame, Layer, AIAnimationResponse, AICall } from '../types';
 import { createEmptyGrid, createLayer } from './layerUtils';
 import { generateId } from './imageUtils';
+import { drawLine, drawRect, drawCircle } from './drawUtils';
 
 // --- Drawing Helpers (similar to presets.ts) ---
-
-const drawLine = (grid: string[][], x0: number, y0: number, x1: number, y1: number, color: string) => {
-    const dx = Math.abs(x1 - x0);
-    const dy = Math.abs(y1 - y0);
-    const sx = (x0 < x1) ? 1 : -1;
-    const sy = (y0 < y1) ? 1 : -1;
-    let err = dx - dy;
-
-    while(true) {
-        if (grid[y0] && grid[y0][x0] !== undefined) grid[y0][x0] = color;
-        if ((x0 === x1) && (y0 === y1)) break;
-        const e2 = 2*err;
-        if (e2 > -dy) { err -= dy; x0 += sx; }
-        if (e2 < dx) { err += dx; y0 += sy; }
-    }
-};
-
-const drawRect = (grid: string[][], x: number, y: number, w: number, h: number, color: string) => {
-    for(let i=0; i<w; i++) {
-        for(let j=0; j<h; j++) {
-            if(grid[y+j] && grid[y+j][x+i] !== undefined) grid[y+j][x+i] = color;
-        }
-    }
-};
-
-const drawCircle = (grid: string[][], cx: number, cy: number, r: number, color: string) => {
-    for(let y=0; y<32; y++) {
-        for(let x=0; x<32; x++) {
-            if(Math.abs(Math.sqrt(Math.pow(x-cx, 2) + Math.pow(y-cy, 2)) - r) < 0.8) {
-                grid[y][x] = color;
-            }
-        }
-    }
-};
 
 const drawPointer = (grid: string[][], color: string, offsetX = 0, offsetY = 0) => {
     const simpleArrow = [
@@ -85,11 +52,23 @@ export const convertAIToFrames = (data: AIAnimationResponse): Frame[] => {
 
             const p = call.params;
             switch (call.method) {
-                case 'drawLine': drawLine(targetGrid, Number(p[0]), Number(p[1]), Number(p[2]), Number(p[3]), String(p[4])); break;
-                case 'drawRect': drawRect(targetGrid, Number(p[0]), Number(p[1]), Number(p[2]), Number(p[3]), String(p[4])); break;
-                case 'drawCircle': drawCircle(targetGrid, Number(p[0]), Number(p[1]), Number(p[2]), String(p[3])); break;
-                case 'drawPointer': drawPointer(targetGrid, String(p[0]), Number(p[1]), Number(p[2])); break;
-                case 'drawHand': drawHand(targetGrid, String(p[0]), Number(p[1]), Number(p[2])); break;
+                case 'drawLine': 
+                    drawLine(targetGrid, Number(p[0]), Number(p[1]), Number(p[2]), Number(p[3]), String(p[4]), 1); 
+                    break;
+                case 'drawRect': 
+                    // AI gives [x, y, w, h, color]
+                    drawRect(targetGrid, Number(p[0]), Number(p[1]), Number(p[0]) + Number(p[2]) - 1, Number(p[1]) + Number(p[3]) - 1, String(p[4]), 1, 'fill'); 
+                    break;
+                case 'drawCircle': 
+                    // AI gives [cx, cy, r, color]
+                    drawCircle(targetGrid, Number(p[0]) - Number(p[2]), Number(p[1]) - Number(p[2]), Number(p[0]) + Number(p[2]), Number(p[1]) + Number(p[2]), String(p[3]), 1, 'fill'); 
+                    break;
+                case 'drawPointer': 
+                    drawPointer(targetGrid, String(p[0]), Number(p[1]), Number(p[2])); 
+                    break;
+                case 'drawHand': 
+                    drawHand(targetGrid, String(p[0]), Number(p[1]), Number(p[2])); 
+                    break;
             }
         });
 

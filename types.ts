@@ -1,6 +1,8 @@
 
 
-export type ToolType = 'pen' | 'eraser' | 'picker' | 'fill' | 'hotspot' | 'select' | 'magicWand';
+export type ToolType = 'pen' | 'eraser' | 'picker' | 'fill' | 'hotspot' | 'select' | 'magicWand' | 'line' | 'rect' | 'circle';
+
+export type DrawMode = 'stroke' | 'fill';
 
 export interface Point {
   x: number;

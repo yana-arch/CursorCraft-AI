@@ -1,10 +1,12 @@
 import { useState, useCallback } from 'react';
-import { ToolType, Point, SelectionState, AnimationSettings } from '../types';
+import { ToolType, Point, SelectionState, AnimationSettings, DrawMode } from '../types';
 
 export const useEditorState = () => {
     const [activeTool, setActiveTool] = useState<ToolType>('pen');
     const [primaryColor, setPrimaryColor] = useState('#3b82f6');
     const [secondaryColor, setSecondaryColor] = useState('#000000');
+    const [brushSize, setBrushSize] = useState(1);
+    const [drawMode, setDrawMode] = useState<DrawMode>('stroke');
     const [hotspot, setHotspot] = useState<Point>({ x: 0, y: 0 });
     const [isPlaying, setIsPlaying] = useState(false);
     const [activeTab, setActiveTab] = useState<'properties' | 'layers'>('properties');
@@ -41,6 +43,8 @@ export const useEditorState = () => {
         activeTool, setActiveTool,
         primaryColor, setPrimaryColor,
         secondaryColor, setSecondaryColor,
+        brushSize, setBrushSize,
+        drawMode, setDrawMode,
         hotspot, setHotspot,
         isPlaying, setIsPlaying,
         activeTab, setActiveTab,
