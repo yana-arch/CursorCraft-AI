@@ -6,10 +6,10 @@ import { getEasingValue } from '../../utils/layerUtils';
 interface AnimationPreviewProps {
     selection: SelectionState;
     params: AnimationParams;
-    pathPivot?: Point;
+    customPivot?: Point;
 }
 
-const AnimationPreview: React.FC<AnimationPreviewProps> = ({ selection, params, pathPivot }) => {
+const AnimationPreview: React.FC<AnimationPreviewProps> = ({ selection, params, customPivot }) => {
     const [previewUrl, setPreviewUrl] = useState<string>('');
     const [frame, setFrame] = useState(0);
     const requestRef = useRef<number>(undefined);
@@ -85,9 +85,9 @@ const AnimationPreview: React.FC<AnimationPreviewProps> = ({ selection, params, 
 
         // Determine CSS transform origin based on pivot
         let transformOrigin = '50% 50%';
-        if (params.enablePathDeform && pathPivot) {
-            const ox = ((pathPivot.x - selection.x) / selection.w) * 100;
-            const oy = ((pathPivot.y - selection.y) / selection.h) * 100;
+        if (params.enablePathDeform && customPivot) {
+            const ox = ((customPivot.x - selection.x) / selection.w) * 100;
+            const oy = ((customPivot.y - selection.y) / selection.h) * 100;
             transformOrigin = `${ox}% ${oy}%`;
         } else if (params.enableSway) {
             switch (params.swayPivot) {
@@ -130,7 +130,7 @@ const AnimationPreview: React.FC<AnimationPreviewProps> = ({ selection, params, 
             hue: currentHue,
             transformOrigin
         };
-    }, [frame, params, selection, pathPivot]);
+    }, [frame, params, selection, customPivot]);
 
     return (
         <div className="w-[320px] bg-gray-900/50 flex flex-col p-8 items-center border-l border-gray-700 shrink-0">

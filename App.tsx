@@ -24,8 +24,8 @@ function AppInner() {
   const {
     activeTool, setActiveTool, setPrimaryColor, setSecondaryColor,
     isLibraryOpen, setIsLibraryOpen, setIsSettingsOpen, setIsWizardOpen, onionSkinEnabled, setOnionSkinEnabled,
-    setPathPivot, setPathPoints, setIsPickingPivot, setIsPickingPath,
-    settings, selection, setSelection, pathPivot
+    customPivot, setCustomPivot, setPathPoints, setIsPickingCustomPivot, setIsPickingPath,
+    settings, selection, setSelection
   } = useEditor();
 
   const {
@@ -119,15 +119,15 @@ function AppInner() {
 
   const handleGenerateAnimation = useCallback((params: AnimationParams) => {
     if (!selection) return;
-    const newFrames = calculateAnimationFrames(frames, activeFrameIndex, activeLayerId, selection, params, settings, pathPivot);
+    const newFrames = calculateAnimationFrames(frames, activeFrameIndex, activeLayerId, selection, params, settings, customPivot);
     setFrames(newFrames);
     setSelection(null);
     setIsWizardOpen(false);
-    setPathPivot(undefined);
+    setCustomPivot(undefined);
     setPathPoints([]);
-    setIsPickingPivot(false);
+    setIsPickingCustomPivot(false);
     setIsPickingPath(false);
-  }, [selection, frames, activeFrameIndex, activeLayerId, settings, pathPivot, setFrames, setSelection, setIsWizardOpen, setPathPivot, setPathPoints, setIsPickingPivot, setIsPickingPath]);
+  }, [selection, frames, activeFrameIndex, activeLayerId, settings, customPivot, setFrames, setSelection, setIsWizardOpen, setCustomPivot, setPathPoints, setIsPickingCustomPivot, setIsPickingPath]);
 
   return (
     <div className="flex h-screen w-screen bg-gray-900 text-gray-100 font-sans overflow-hidden">

@@ -41,8 +41,8 @@ export const calculateAnimationFrames = (
         stepHue,
         easing,
         isBoomerang,
-        rotationPivotMode,
-        rotationCustomPivot,
+        motionPivotMode,
+        motionCustomPivot,
         enableSway,
         swayAngle,
         swayPeriod,
@@ -141,14 +141,14 @@ export const calculateAnimationFrames = (
         if (!pivot) {
             const w = selection.w;
             const h = selection.h;
-            if (rotationPivotMode === '1x1') {
+            if (motionPivotMode === '1x1') {
                 pivot = { x: Math.floor((w - 1) / 2), y: Math.floor((h - 1) / 2) };
-            } else if (rotationPivotMode === '2x2') {
+            } else if (motionPivotMode === '2x2') {
                 pivot = { x: Math.floor((w - 1) / 2) + 0.5, y: Math.floor((h - 1) / 2) + 0.5 };
-            } else if (rotationPivotMode === 'custom' && rotationCustomPivot) {
+            } else if (motionPivotMode === 'custom' && motionCustomPivot) {
                 pivot = {
-                    x: rotationCustomPivot.x - selection.x,
-                    y: rotationCustomPivot.y - selection.y
+                    x: motionCustomPivot.x - selection.x,
+                    y: motionCustomPivot.y - selection.y
                 };
             }
         }

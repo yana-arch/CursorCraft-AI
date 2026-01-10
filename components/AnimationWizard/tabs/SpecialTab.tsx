@@ -5,16 +5,16 @@ import { AnimationParams, Point } from '../../../types';
 interface SpecialTabProps {
     params: AnimationParams;
     setParams: (p: AnimationParams) => void;
-    pathPivot?: Point;
+    customPivot?: Point;
     pathPoints: Point[];
     setPathPoints: (p: Point[]) => void;
-    isPickingPivot: boolean;
-    setIsPickingPivot: (v: boolean) => void;
+    isPickingCustomPivot: boolean;
+    setIsPickingCustomPivot: (v: boolean) => void;
     setIsPickingPath: (v: boolean) => void;
 }
 
 const SpecialTab: React.FC<SpecialTabProps> = ({ 
-    params, setParams, pathPivot, pathPoints, setPathPoints, isPickingPivot, setIsPickingPivot, setIsPickingPath 
+    params, setParams, customPivot, pathPoints, setPathPoints, isPickingCustomPivot, setIsPickingCustomPivot, setIsPickingPath 
 }) => {
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-left-4 duration-300">
@@ -124,13 +124,13 @@ const SpecialTab: React.FC<SpecialTabProps> = ({
                         <div className="flex items-center justify-between p-4 bg-gray-950 rounded-xl border border-gray-700">
                             <div className="space-y-1">
                                 <span className="text-[10px] font-black text-gray-500 uppercase">Step 1: Root Pivot</span>
-                                <p className="text-[10px] text-brand-400 font-mono">{pathPivot ? `${pathPivot.x}, ${pathPivot.y}` : 'NOT SET'}</p>
+                                <p className="text-[10px] text-brand-400 font-mono">{customPivot ? `${customPivot.x}, ${customPivot.y}` : 'NOT SET'}</p>
                             </div>
                             <button 
-                                onClick={() => { setIsPickingPivot(!isPickingPivot); setIsPickingPath(false); }} 
-                                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${isPickingPivot ? 'bg-brand-500 text-white animate-pulse' : 'bg-gray-800 text-gray-400 border border-gray-700'}`}
+                                onClick={() => { setIsPickingCustomPivot(!isPickingCustomPivot); setIsPickingPath(false); }} 
+                                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${isPickingCustomPivot ? 'bg-brand-500 text-white animate-pulse' : 'bg-gray-800 text-gray-400 border border-gray-700'}`}
                             >
-                                {isPickingPivot ? 'Click Canvas' : 'Pick Pivot'}
+                                {isPickingCustomPivot ? 'Click Canvas' : 'Pick Pivot'}
                             </button>
                         </div>
 
@@ -140,12 +140,12 @@ const SpecialTab: React.FC<SpecialTabProps> = ({
                                 <div className="flex space-x-2">
                                     <button 
                                         onClick={() => setPathPoints([])}
-                                        className="p-2 text-gray-500 hover:text-red-400 bg-gray-950 border border-gray-700 rounded-lg"
+                                        className="p-2 text-gray-500 hover:text-red-400 bg-gray-950 border border-gray-700 rounded-lg transition-all"
                                     >
                                         <Trash2 size={12} />
                                     </button>
                                     <button 
-                                        onClick={() => { setIsPickingPath(true); setIsPickingPivot(false); }} 
+                                        onClick={() => { setIsPickingPath(true); setIsPickingCustomPivot(false); }} 
                                         className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all bg-gray-900 text-gray-400 border border-gray-700`}
                                     >
                                         Add Targets

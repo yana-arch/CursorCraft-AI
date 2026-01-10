@@ -25,13 +25,15 @@ interface EditorContextType {
     onionSkinEnabled: boolean;
     setOnionSkinEnabled: (v: boolean) => void;
     
+    // Generic Custom Pivot State
+    customPivot: Point | undefined;
+    setCustomPivot: (p: Point | undefined) => void;
+    isPickingCustomPivot: boolean;
+    setIsPickingCustomPivot: (v: boolean) => void;
+
     // Path Deform State
-    pathPivot: Point | undefined;
-    setPathPivot: (p: Point | undefined) => void;
     pathPoints: Point[];
     setPathPoints: (p: Point[]) => void;
-    isPickingPivot: boolean;
-    setIsPickingPivot: (v: boolean) => void;
     isPickingPath: boolean;
     setIsPickingPath: (v: boolean) => void;
 
@@ -56,10 +58,12 @@ export const EditorProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const [isWizardOpen, setIsWizardOpen] = useState(false);
     const [onionSkinEnabled, setOnionSkinEnabled] = useState(false);
 
+    // Generic Custom Pivot State
+    const [customPivot, setCustomPivot] = useState<Point | undefined>(undefined);
+    const [isPickingCustomPivot, setIsPickingCustomPivot] = useState(false);
+
     // Path Deform State
-    const [pathPivot, setPathPivot] = useState<Point | undefined>(undefined);
     const [pathPoints, setPathPoints] = useState<Point[]>([]);
-    const [isPickingPivot, setIsPickingPivot] = useState(false);
     const [isPickingPath, setIsPickingPath] = useState(false);
 
     const [settings, setSettings] = useState<AnimationSettings>(() => {
@@ -90,9 +94,9 @@ export const EditorProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         isSettingsOpen, setIsSettingsOpen,
         isWizardOpen, setIsWizardOpen,
         onionSkinEnabled, setOnionSkinEnabled,
-        pathPivot, setPathPivot,
+        customPivot, setCustomPivot,
+        isPickingCustomPivot, setIsPickingCustomPivot,
         pathPoints, setPathPoints,
-        isPickingPivot, setIsPickingPivot,
         isPickingPath, setIsPickingPath,
         settings, saveSettings,
         selection, setSelection,

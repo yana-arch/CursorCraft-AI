@@ -13,8 +13,8 @@ type TabType = 'general' | 'motion' | 'visuals' | 'special';
 const AnimationWizard: React.FC<{ onGenerate: (params: AnimationParams) => void }> = ({ onGenerate }) => {
     const { 
         isWizardOpen, setIsWizardOpen, settings, selection, 
-        isPickingPivot, setIsPickingPivot, isPickingPath, setIsPickingPath, 
-        pathPivot, pathPoints, setPathPoints 
+        isPickingCustomPivot, setIsPickingCustomPivot, isPickingPath, setIsPickingPath, 
+        customPivot, pathPoints, setPathPoints 
     } = useEditor();
 
     const [activeTab, setActiveTab] = useState<TabType>('general');
@@ -44,7 +44,14 @@ const AnimationWizard: React.FC<{ onGenerate: (params: AnimationParams) => void 
         pathPoints: []
     });
 
-    useEffect(() => { setParams(prev => ({ ...prev, pathPoints })); }, [pathPoints]);
+    useEffect(() => {
+        setParams(prev => ({ ...prev, pathPoints }));
+    }, [pathPoints]);
+
+    useEffect(() => {
+        setParams(prev => ({ ...prev, motionCustomPivot: customPivot }));
+    }, [customPivot]);
+
     useEffect(() => { if (params.isLoop) setParams(prev => ({ ...prev, stepAngle: Number((360 / prev.framesCount).toFixed(2)) })); }, [params.isLoop, params.framesCount]);
 
     if (!isWizardOpen) return null;
@@ -82,14 +89,14 @@ const AnimationWizard: React.FC<{ onGenerate: (params: AnimationParams) => void 
 
                         <div className="p-8 overflow-y-auto custom-scrollbar flex-1">
                             {activeTab === 'general' && <GeneralTab params={params} setParams={setParams} />}
-                            {activeTab === 'motion' && <MotionTab params={params} setParams={setParams} isPickingPath={isPickingPath} setIsPickingPath={setIsPickingPath} setIsPickingPivot={setIsPickingPivot} pathPoints={pathPoints} setPathPoints={setPathPoints} />}
+                            {activeTab === 'motion' && <MotionTab params={params} setParams={setParams} isPickingPath={isPickingPath} setIsPickingPath={setIsPickingPath} setIsPickingCustomPivot={setIsPickingCustomPivot} pathPoints={pathPoints} setPathPoints={setPathPoints} />}
                             {activeTab === 'visuals' && <VisualsTab params={params} setParams={setParams} />}
-                            {activeTab === 'special' && <SpecialTab params={params} setParams={setParams} pathPivot={pathPivot} pathPoints={pathPoints} setPathPoints={setPathPoints} isPickingPivot={isPickingPivot} setIsPickingPivot={setIsPickingPivot} setIsPickingPath={setIsPickingPath} />}
+                            {activeTab === 'special' && <SpecialTab params={params} setParams={setParams} customPivot={customPivot} pathPoints={pathPoints} setPathPoints={setPathPoints} isPickingCustomPivot={isPickingCustomPivot} setIsPickingCustomPivot={setIsPickingCustomPivot} setIsPickingPath={setIsPickingPath} />}
                         </div>
                     </div>
 
                     {/* Right: Preview */}
-                    {selection && <AnimationPreview selection={selection} params={params} pathPivot={pathPivot} />}
+                    {selection && <AnimationPreview selection={selection} params={params} pathPivot={customPivot} />}
                     {!selection && (
                         <div className="w-[320px] bg-gray-900/50 flex flex-col p-8 items-center border-l border-gray-700 shrink-0 justify-center">
                             <div className="w-40 h-40 bg-gray-950 border border-dashed border-gray-700 rounded-2xl flex items-center justify-center text-center p-6">

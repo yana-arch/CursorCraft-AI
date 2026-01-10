@@ -1,19 +1,23 @@
 import React from 'react';
 import { RotateCw, Move, MapPin, Trash2, ArrowLeftRight } from 'lucide-react';
 import { AnimationParams, Point } from '../../../types';
+import PivotSelector from '../PivotSelector';
 
 interface MotionTabProps {
     params: AnimationParams;
     setParams: (p: AnimationParams) => void;
     isPickingPath: boolean;
     setIsPickingPath: (v: boolean) => void;
-    setIsPickingPivot: (v: boolean) => void;
+    setIsPickingCustomPivot: (v: boolean) => void;
     pathPoints: Point[];
     setPathPoints: (p: Point[]) => void;
+    customPivot?: Point;
+    isPickingCustomPivot: boolean;
 }
 
 const MotionTab: React.FC<MotionTabProps> = ({ 
-    params, setParams, isPickingPath, setIsPickingPath, setIsPickingPivot, pathPoints, setPathPoints 
+    params, setParams, isPickingPath, setIsPickingPath, setIsPickingCustomPivot, pathPoints, setPathPoints,
+    customPivot, isPickingCustomPivot
 }) => {
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-left-4 duration-300">
@@ -66,7 +70,7 @@ const MotionTab: React.FC<MotionTabProps> = ({
                         )}
                     </div>
                     {params.enableRotation && (
-                        <div className="space-y-4 animate-in fade-in zoom-in-95">
+                        <div className="space-y-6 animate-in fade-in zoom-in-95">
                             <input
                                 type="number" step="0.5"
                                 value={params.stepAngle}
@@ -75,29 +79,13 @@ const MotionTab: React.FC<MotionTabProps> = ({
                                 className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-200 outline-none focus:ring-2 focus:ring-brand-500/50 disabled:opacity-30 transition-all"
                             />
 
-                            <div className="space-y-2">
-                                <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Rotation Pivot</label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {(['auto', '1x1', '2x2'] as const).map(mode => (
-                                        <button
-                                            key={mode}
-                                            onClick={() => setParams({ ...params, rotationPivotMode: mode })}
-                                            className={`py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-all ${
-                                                params.rotationPivotMode === mode 
-                                                ? 'bg-brand-600 border-brand-400 text-white shadow-lg' 
-                                                : 'bg-gray-900 border-gray-700 text-gray-400 hover:border-gray-600'
-                                            }`}
-                                        >
-                                            {mode === 'auto' ? 'Auto' : mode === '1x1' ? '1x1' : '2x2'}
-                                        </button>
-                                    ))}
-                                </div>
-                                <p className="text-[9px] text-gray-600 italic">
-                                    {params.rotationPivotMode === 'auto' && 'Auto-calculate mathematical center.'}
-                                    {params.rotationPivotMode === '1x1' && 'Rotate around a single center pixel.'}
-                                    {params.rotationPivotMode === '2x2' && 'Rotate around the intersection of 4 pixels.'}
-                                </p>
-                            </div>
+                            <PivotSelector 
+                                mode={params.motionPivotMode}
+                                onModeChange={(mode) => setParams({ ...params, motionPivotMode: mode })}
+                                customPivot={customPivot}
+                                isPicking={isPickingCustomPivot}
+                                onStartPicking={() => { setIsPickingCustomPivot(!isPickingCustomPivot); setIsPickingPath(false); }}
+                            />
                         </div>
                     )}
                 </div>
@@ -153,7 +141,7 @@ const MotionTab: React.FC<MotionTabProps> = ({
                                             <Trash2 size={14} />
                                         </button>
                                         <button 
-                                            onClick={() => { setIsPickingPath(!isPickingPath); setIsPickingPivot(false); }}
+                                            onClick={() => { setIsPickingPath(!isPickingPath); setIsPickingCustomPivot(false); }}
                                             className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${isPickingPath ? 'bg-brand-500 text-white animate-pulse' : 'bg-gray-950 text-gray-400 border border-gray-700'}`}
                                         >
                                             {isPickingPath ? 'Pick Points...' : 'Add Points'}

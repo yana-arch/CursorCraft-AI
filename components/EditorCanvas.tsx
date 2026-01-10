@@ -26,9 +26,9 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
     brushSize,
     drawMode,
     selection, setSelection,
-    pathPivot, setPathPivot,
+    customPivot, setCustomPivot,
     pathPoints, setPathPoints,
-    isPickingPivot,
+    isPickingCustomPivot,
     isPickingPath,
   } = useEditor();
 
@@ -150,7 +150,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
     e.preventDefault();
     if (e.button !== 0 && e.button !== 2) return;
 
-    if (isPickingPivot) { setPathPivot({ x, y }); return; }
+    if (isPickingCustomPivot) { setCustomPivot({ x, y }); return; }
     if (isPickingPath) { setPathPoints([...pathPoints, { x, y }]); return; }
 
     if (activeTool === 'select' || activeTool === 'magicWand' || activeTool === 'line' || activeTool === 'rect' || activeTool === 'circle') {
@@ -297,7 +297,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     <div key={`${x}-${y}`} onMouseDown={(e) => handleGlobalMouseDown(e, x, y)} onMouseEnter={(e) => handleGlobalMouseEnter(e, x, y)} className={`w-full h-full border-[0.5px] border-gray-800/20 select-none relative ${(x + y) % 2 === 0 ? 'bg-gray-800' : 'bg-gray-750'}`}>
                         {content?.color && <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: content.color, opacity }} />}
                         {hotspot.x === x && hotspot.y === y && <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"><div className="w-2 h-2 bg-red-500 rounded-full animate-pulse ring-1 ring-white shadow-sm shadow-black" /></div>}
-                        {pathPivot?.x === x && pathPivot?.y === y && <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[60]"><div className="w-3 h-3 bg-brand-500 rounded-full ring-2 ring-white shadow-lg flex items-center justify-center text-[8px] text-white font-bold">X</div></div>}
+                        {customPivot?.x === x && customPivot?.y === y && <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[60]"><div className="w-3 h-3 bg-brand-500 rounded-full ring-2 ring-white shadow-lg flex items-center justify-center text-[8px] text-white font-bold">X</div></div>}
                         {pathPoints?.map((p, idx) => p.x === x && p.y === y && (<div key={`path-${idx}`} className="absolute inset-0 flex items-center justify-center pointer-events-none z-[60]"><div className="w-3 h-3 bg-purple-500 rounded-full ring-2 ring-white shadow-lg flex items-center justify-center text-[8px] text-white font-bold">{idx + 1}</div></div>))}
                     </div>
                 );

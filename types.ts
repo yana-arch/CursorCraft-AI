@@ -74,8 +74,8 @@ export interface AnimationParams {
     easing: EasingType;
     isLoop: boolean;
     isBoomerang: boolean; // New: Move back to start
-    rotationPivotMode: 'auto' | '1x1' | '2x2' | 'custom';
-    rotationCustomPivot?: Point;
+    motionPivotMode: 'auto' | '1x1' | '2x2' | 'custom';
+    motionCustomPivot?: Point;
     // Special Effects
     enableSway: boolean;
     swayAngle: number;
