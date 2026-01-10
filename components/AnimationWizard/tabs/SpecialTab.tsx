@@ -52,6 +52,52 @@ const SpecialTab: React.FC<SpecialTabProps> = ({
                                 className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-200 outline-none focus:ring-2 focus:ring-brand-500/50"
                             />
                         </div>
+
+                        <div className="space-y-1 col-span-2">
+                            <div className="flex justify-between items-center">
+                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Rigid Root Area</span>
+                                <span className="text-[10px] text-brand-400 font-mono font-bold bg-brand-500/10 px-2 py-0.5 rounded">{params.swayRigidArea}px</span>
+                            </div>
+                            <input
+                                type="range" min="0" max="16" step="1"
+                                value={params.swayRigidArea}
+                                onChange={(e) => setParams({ ...params, swayRigidArea: parseInt(e.target.value) })}
+                                className="w-full accent-brand-500 bg-gray-950 h-1.5 rounded-lg appearance-none cursor-pointer border border-gray-700"
+                            />
+                            <p className="text-[9px] text-gray-600 mt-1 italic">Number of pixels from the pivot that remain stationary.</p>
+                        </div>
+
+                        <div className="space-y-3 col-span-2">
+                            <span className="text-[10px] font-black text-gray-500 uppercase">Pivot Point (Fixed Root)</span>
+                            <div className="flex justify-center">
+                                <div className="grid grid-cols-3 gap-2 bg-gray-900 p-3 rounded-xl border border-gray-700">
+                                    {[
+                                        { id: 'top-left', label: '↖' },
+                                        { id: 'top', label: '↑' },
+                                        { id: 'top-right', label: '↗' },
+                                        { id: 'left', label: '←' },
+                                        { id: 'center', label: '•' },
+                                        { id: 'right', label: '→' },
+                                        { id: 'bottom-left', label: '↙' },
+                                        { id: 'bottom', label: '↓' },
+                                        { id: 'bottom-right', label: '↘' },
+                                    ].map((p) => (
+                                        <button
+                                            key={p.id}
+                                            onClick={() => setParams({ ...params, swayPivot: p.id as any })}
+                                            className={`w-10 h-10 flex items-center justify-center rounded-lg border transition-all ${
+                                                params.swayPivot === p.id 
+                                                ? 'bg-brand-600 border-brand-400 text-white shadow-lg shadow-brand-500/40 scale-110 z-10' 
+                                                : 'bg-gray-800 border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-300'
+                                            }`}
+                                            title={p.id}
+                                        >
+                                            <span className="text-lg font-bold">{p.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
