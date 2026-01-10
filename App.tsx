@@ -1,6 +1,7 @@
 import React, { useMemo, useCallback } from "react";
 import Toolbar from "./components/Toolbar";
 import Header from "./components/Header";
+import FeatureBar from "./components/FeatureBar";
 import EditorCanvas from "./components/EditorCanvas";
 import Timeline from "./components/Timeline";
 import RightSidebar from "./components/RightSidebar";
@@ -8,7 +9,7 @@ import ProjectManager from "./components/ProjectManager";
 import SettingsModal from "./components/SettingsModal";
 import AnimationWizard from "./components/AnimationWizard";
 import { Frame, AnimationParams } from "./types";
-import { composeLayers, createLayer } from "./utils/layerUtils";
+import { createLayer, createEmptyGrid, composeLayers } from "./utils/layerUtils";
 import { generateId, processImageToGrid } from "./utils/imageUtils";
 import { calculateAnimationFrames } from "./utils/animationGenerator";
 import { SavedProject } from "./utils/storage";
@@ -22,9 +23,9 @@ import { EditorProvider, useEditor } from "./contexts/EditorContext";
 function AppInner() {
   const {
     activeTool, setActiveTool, setPrimaryColor, setSecondaryColor,
-    isLibraryOpen, setIsLibraryOpen, setIsWizardOpen, onionSkinEnabled, setOnionSkinEnabled,
+    isLibraryOpen, setIsLibraryOpen, setIsSettingsOpen, setIsWizardOpen, onionSkinEnabled, setOnionSkinEnabled,
     setPathPivot, setPathPoints, setIsPickingPivot, setIsPickingPath,
-    settings, saveSettings, selection, setSelection, pathPivot
+    settings, selection, setSelection, pathPivot
   } = useEditor();
 
   const {
@@ -37,13 +38,47 @@ function AppInner() {
   const { handleAIAddFrames, handleApplyGeneratedImage, handleAIStructuredData } = useAIWorkflow();
   const { handleExport, handleExportInstaller } = useProjectExport();
 
+  const handleTransform = useCallback((type: "flipH" | "flipV" | "rotate") => {
+    if (selection) {
+      if (type === "rotate") {
+        setSelection({ ...selection, angle: (selection.angle || 0) + 90 });
+      } else if (type === "flipH") {
+        const flipped = selection.floatingPixels.map(row => [...row].reverse());
+        setSelection({ ...selection, floatingPixels: flipped });
+      } else if (type === "flipV") {
+        const flipped = [...selection.floatingPixels].reverse().map(row => [...row]);
+        setSelection({ ...selection, floatingPixels: flipped });
+      }
+      return;
+    }
+    updateActiveLayerGrid((grid) => {
+      const size = 32;
+      const newGrid = createEmptyGrid();
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          let nx = x, ny = y;
+          if (type === "flipH") nx = size - 1 - x;
+          else if (type === "flipV") ny = size - 1 - y;
+          else if (type === "rotate") {
+            nx = size - 1 - y;
+            ny = x;
+          }
+          newGrid[ny][nx] = grid[y][x];
+        }
+      }
+      return newGrid;
+    });
+  }, [selection, setSelection, updateActiveLayerGrid]);
+
+  useShortcuts({ undo, redo, activeTool, setActiveTool, setOnionSkinEnabled, setIsPlaying: () => {}, onTransform: handleTransform });
+
   const { onionSkinPrev, onionSkinNext } = useMemo(() => {
     if (!onionSkinEnabled || frames.length <= 1) return { onionSkinPrev: undefined, onionSkinNext: undefined };
     const prevIdx = (activeFrameIndex - 1 + frames.length) % frames.length;
     const nextIdx = (activeFrameIndex + 1) % frames.length;
     return {
-      onionSkinPrev: composeLayers(frames[prevIdx].layers),
-      onionSkinNext: composeLayers(frames[nextIdx].layers),
+      onionSkinPrev: frames[prevIdx] ? composeLayers(frames[prevIdx].layers) : undefined,
+      onionSkinNext: frames[nextIdx] ? composeLayers(frames[nextIdx].layers) : undefined,
     };
   }, [frames, activeFrameIndex, onionSkinEnabled]);
 
@@ -82,48 +117,6 @@ function AppInner() {
     setActiveLayerId(newFrames[0].layers[0].id);
   }, [resetFrames, setActiveFrameIndex, setActiveLayerId]);
 
-  const handleTransform = useCallback((type: "flipH" | "flipV" | "rotate") => {
-    if (selection) {
-      if (type === "rotate") {
-        setSelection({ ...selection, angle: (selection.angle || 0) + 90 });
-      } else if (type === "flipH") {
-        const flipped = selection.floatingPixels.map(row => [...row].reverse());
-        setSelection({ ...selection, floatingPixels: flipped });
-      } else if (type === "flipV") {
-        const flipped = [...selection.floatingPixels].reverse().map(row => [...row]);
-        setSelection({ ...selection, floatingPixels: flipped });
-      }
-      return;
-    }
-    updateActiveLayerGrid((grid) => {
-      const size = 32;
-      const newGrid = Array(size).fill(null).map(() => Array(size).fill(''));
-      for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-          let nx = x, ny = y;
-          if (type === "flipH") nx = size - 1 - x;
-          else if (type === "flipV") ny = size - 1 - y;
-          else if (type === "rotate") {
-            nx = size - 1 - y;
-            ny = x;
-          }
-          newGrid[ny][nx] = grid[y][x];
-        }
-      }
-      return newGrid;
-    });
-  }, [selection, setSelection, updateActiveLayerGrid]);
-
-  useShortcuts({ 
-    undo, 
-    redo, 
-    activeTool,
-    setActiveTool, 
-    setOnionSkinEnabled, 
-    setIsPlaying: () => {},
-    onTransform: handleTransform
-  });
-
   const handleGenerateAnimation = useCallback((params: AnimationParams) => {
     if (!selection) return;
     const newFrames = calculateAnimationFrames(frames, activeFrameIndex, activeLayerId, selection, params, settings, pathPivot);
@@ -134,13 +127,14 @@ function AppInner() {
     setPathPoints([]);
     setIsPickingPivot(false);
     setIsPickingPath(false);
-  }, [selection, frames, activeFrameIndex, settings, pathPivot, setFrames, setSelection, setIsWizardOpen, setPathPivot, setPathPoints, setIsPickingPivot, setIsPickingPath]);
+  }, [selection, frames, activeFrameIndex, activeLayerId, settings, pathPivot, setFrames, setSelection, setIsWizardOpen, setPathPivot, setPathPoints, setIsPickingPivot, setIsPickingPath]);
 
   return (
     <div className="flex h-screen w-screen bg-gray-900 text-gray-100 font-sans overflow-hidden">
-      <Toolbar onExport={handleExport} onExportInstaller={handleExportInstaller} onImport={handleImport} onTransform={handleTransform} />
+      <Toolbar />
       <div className="flex-1 flex flex-col min-w-0">
         <Header />
+        <FeatureBar onExport={handleExport} onExportInstaller={handleExportInstaller} onImport={handleImport} onTransform={handleTransform} />
         <EditorCanvas onionSkinPrev={onionSkinPrev} onionSkinNext={onionSkinNext} onRotateSelection={() => {}} onOpenWizard={() => setIsWizardOpen(true)} />
         <Timeline />
       </div>
