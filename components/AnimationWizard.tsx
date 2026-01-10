@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Film, X, Info, RotateCw, Move, Maximize, Sun, Palette, Zap, Settings2, Wind, Crosshair, MapPin, Trash2 } from 'lucide-react';
+import { Play, Film, X, Info, RotateCw, Move, Maximize, Sun, Palette, Zap, Settings2, Wind, Crosshair, MapPin, Trash2, ArrowLeftRight } from 'lucide-react';
 import { AnimationParams, AnimationSettings, EasingType, Point } from '../types';
 
 interface AnimationWizardProps {
@@ -37,6 +37,7 @@ const AnimationWizard: React.FC<AnimationWizardProps> = ({
         stepHue: 0,
         easing: 'linear',
         isLoop: false,
+        isBoomerang: false,
         enableSway: false,
         swayAngle: 15,
         swayPeriod: 8,
@@ -123,6 +124,26 @@ const AnimationWizard: React.FC<AnimationWizardProps> = ({
 
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center space-x-2">
+                                        <ArrowLeftRight size={12} />
+                                        <span>Animation Mode</span>
+                                    </label>
+                                    <div className="flex items-center space-x-4 bg-gray-950 border border-gray-700 rounded-lg p-3">
+                                        <div className="flex items-center space-x-2">
+                                            <input 
+                                                type="checkbox" 
+                                                id="boomerang"
+                                                checked={params.isBoomerang}
+                                                onChange={(e) => setParams({ ...params, isBoomerang: e.target.checked })}
+                                                className="w-4 h-4 rounded border-gray-700 bg-gray-900 text-brand-500 focus:ring-brand-500" 
+                                            />
+                                            <label htmlFor="boomerang" className="text-xs text-gray-300 font-medium cursor-pointer">Boomerang (Back & Forth)</label>
+                                        </div>
+                                    </div>
+                                    <p className="text-[10px] text-gray-500 italic">When enabled, the animation will play forward then backward.</p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center space-x-2">
                                         <Zap size={12} />
                                         <span>Movement Easing</span>
                                     </label>
@@ -200,6 +221,43 @@ const AnimationWizard: React.FC<AnimationWizardProps> = ({
                                         </div>
                                     </div>
                                     <p className="text-[10px] text-gray-500 italic">Move the selection by this many pixels on each new frame.</p>
+                                </div>
+
+                                {/* Target Positions Path */}
+                                <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-xs font-bold text-gray-200 uppercase tracking-widest flex items-center space-x-2">
+                                            <MapPin size={14} className="text-brand-400" />
+                                            <span>Target Path Points</span>
+                                        </label>
+                                        <div className="flex space-x-1">
+                                            <button 
+                                                onClick={() => setPathPoints([])}
+                                                className="p-1 text-gray-500 hover:text-red-400 transition-colors"
+                                                title="Clear points"
+                                            >
+                                                <Trash2 size={12} />
+                                            </button>
+                                            <button 
+                                                onClick={() => {
+                                                    setIsPickingPath(!isPickingPath);
+                                                    setIsPickingPivot(false);
+                                                }}
+                                                className={`px-3 py-1.5 rounded text-[10px] font-bold transition-all ${isPickingPath ? 'bg-purple-500 text-white animate-pulse' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+                                            >
+                                                {isPickingPath ? 'Click Targets' : 'Add Targets'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto custom-scrollbar p-1 bg-gray-950 rounded border border-gray-700">
+                                        {pathPoints.length === 0 && <span className="text-[9px] text-gray-600 italic px-1">No target points. Using incremental values instead.</span>}
+                                        {pathPoints.map((p, i) => (
+                                            <div key={i} className="bg-gray-800 border border-brand-500/30 text-brand-400 text-[9px] px-2 py-1 rounded-md font-mono flex items-center space-x-1">
+                                                <span>P{i+1}: {p.x},{p.y}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <p className="text-[10px] text-gray-500 italic">If set, selection will move through these points instead of using X/Y steps.</p>
                                 </div>
                             </div>
                         </div>

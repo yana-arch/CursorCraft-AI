@@ -35,6 +35,7 @@ export const calculateAnimationFrames = (
         stepOpacity,
         stepHue,
         easing,
+        isBoomerang,
         enableSway,
         swayAngle,
         swayPeriod,
@@ -52,12 +53,49 @@ export const calculateAnimationFrames = (
     const layerIndex = sourceFrame.layers.findIndex((l) => l.id === activeLayerId);
     if (layerIndex === -1) return sourceFrames;
 
+    const getPositionAtT = (t: number): { x: number, y: number } => {
+        if (!pathPoints || pathPoints.length === 0) {
+            return {
+                x: selection.x + stepX * t * (framesCount - 1),
+                y: selection.y + stepY * t * (framesCount - 1)
+            };
+        }
+
+        // Interpolate through pathPoints
+        // t is 0 to 1
+        const totalSegments = pathPoints.length; // Including start position as point 0?
+        // Let's assume pathPoints are targets. Start is selection.x/y.
+        const allPoints = [{ x: selection.x, y: selection.y }, ...pathPoints];
+        const segmentsCount = allPoints.length - 1;
+        
+        const scaledT = t * segmentsCount;
+        const index = Math.min(Math.floor(scaledT), segmentsCount - 1);
+        const segmentT = scaledT - index;
+        
+        const p1 = allPoints[index];
+        const p2 = allPoints[index + 1];
+        
+        return {
+            x: p1.x + (p2.x - p1.x) * segmentT,
+            y: p1.y + (p2.y - p1.y) * segmentT
+        };
+    };
+
     const createTransformedLayer = (step: number) => {
         const t = step / (framesCount - 1);
-        const easedT = getEasingValue(t, easing);
+        let progressT = t;
+        
+        if (isBoomerang) {
+            progressT = t <= 0.5 ? t * 2 : (1 - t) * 2;
+        }
+
+        const easedT = getEasingValue(progressT, easing);
+        
         let currentAngle = selection.angle + stepAngle * easedT * (framesCount - 1);
-        let currentX = selection.x + stepX * easedT * (framesCount - 1),
-            currentY = selection.y + stepY * easedT * (framesCount - 1);
+        const pos = getPositionAtT(easedT);
+        let currentX = pos.x;
+        let currentY = pos.y;
+        
         let currentScale = Math.pow(stepScale, easedT * (framesCount - 1)),
             currentOpacity = Math.pow(stepOpacity, easedT * (framesCount - 1));
         let currentHue = stepHue * easedT * (framesCount - 1);

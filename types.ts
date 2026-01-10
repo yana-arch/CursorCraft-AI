@@ -66,6 +66,7 @@ export interface AnimationParams {
     stepHue: number;
     easing: EasingType;
     isLoop: boolean;
+    isBoomerang: boolean; // New: Move back to start
     // Special Effects
     enableSway: boolean;
     swayAngle: number;
