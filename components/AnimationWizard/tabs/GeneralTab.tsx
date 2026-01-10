@@ -23,27 +23,6 @@ const GeneralTab: React.FC<GeneralTabProps> = ({ params, setParams }) => {
 
                 <div className="space-y-3">
                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] flex items-center space-x-2">
-                        <ArrowLeftRight size={12} />
-                        <span>Playback Mode</span>
-                    </label>
-                    <div 
-                        className="flex items-center space-x-4 bg-gray-950 border border-gray-700 rounded-xl p-4 hover:border-gray-600 transition-colors cursor-pointer group" 
-                        onClick={() => setParams({ ...params, isBoomerang: !params.isBoomerang })}
-                    >
-                        <div className="flex items-center space-x-3 flex-1">
-                            <div className={`w-10 h-6 rounded-full relative transition-all ${params.isBoomerang ? 'bg-brand-600' : 'bg-gray-700'}`}>
-                                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${params.isBoomerang ? 'right-1' : 'left-1'}`} />
-                            </div>
-                            <div>
-                                <p className="text-xs text-white font-bold">Boomerang Effect</p>
-                                <p className="text-[10px] text-gray-500">Back & forth ping-pong loop</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="space-y-3">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] flex items-center space-x-2">
                         <Zap size={12} />
                         <span>Interpolation</span>
                     </label>

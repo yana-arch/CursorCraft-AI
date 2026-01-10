@@ -1,5 +1,5 @@
 import React from 'react';
-import { RotateCw, Move, MapPin, Trash2 } from 'lucide-react';
+import { RotateCw, Move, MapPin, Trash2, ArrowLeftRight } from 'lucide-react';
 import { AnimationParams, Point } from '../../../types';
 
 interface MotionTabProps {
@@ -18,6 +18,27 @@ const MotionTab: React.FC<MotionTabProps> = ({
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-left-4 duration-300">
             <div className="space-y-6">
+                <div className="space-y-3">
+                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] flex items-center space-x-2">
+                        <ArrowLeftRight size={12} />
+                        <span>Playback Mode</span>
+                    </label>
+                    <div 
+                        className="flex items-center space-x-4 bg-gray-950 border border-gray-700 rounded-xl p-4 hover:border-gray-600 transition-colors cursor-pointer group" 
+                        onClick={() => setParams({ ...params, isBoomerang: !params.isBoomerang })}
+                    >
+                        <div className="flex items-center space-x-3 flex-1">
+                            <div className={`w-10 h-6 rounded-full relative transition-all ${params.isBoomerang ? 'bg-brand-600' : 'bg-gray-700'}`}>
+                                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${params.isBoomerang ? 'right-1' : 'left-1'}`} />
+                            </div>
+                            <div>
+                                <p className="text-xs text-white font-bold">Boomerang Effect</p>
+                                <p className="text-[10px] text-gray-500">Back & forth ping-pong loop</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div className={`p-6 bg-gray-800/30 rounded-2xl border transition-all ${params.enableRotation ? 'border-brand-500/50 shadow-lg shadow-brand-500/5' : 'border-gray-700'}`}>
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center space-x-3">
