@@ -122,12 +122,12 @@ const AnimationPreview: React.FC<AnimationPreviewProps> = ({ selection, params, 
         }
 
         return { 
-            x: (currentX - selection.x) * 4, 
-            y: (currentY - selection.y) * 4, 
-            rotate: finalRotate, 
-            scale: currentScale, 
-            opacity: currentOpacity, 
-            hue: currentHue,
+            x: isNaN(currentX) ? 0 : (currentX - selection.x) * 4, 
+            y: isNaN(currentY) ? 0 : (currentY - selection.y) * 4, 
+            rotate: isNaN(finalRotate) ? 0 : finalRotate, 
+            scale: isNaN(currentScale) ? 1 : currentScale, 
+            opacity: isNaN(currentOpacity) ? 1 : currentOpacity, 
+            hue: isNaN(currentHue) ? 0 : currentHue,
             transformOrigin
         };
     }, [frame, params, selection, customPivot]);
@@ -146,8 +146,8 @@ const AnimationPreview: React.FC<AnimationPreviewProps> = ({ selection, params, 
                 <div 
                     className="absolute transition-none"
                     style={{
-                        width: selection.w * 4,
-                        height: selection.h * 4,
+                        width: `${selection.w * 4}px`,
+                        height: `${selection.h * 4}px`,
                         transform: `translate(${currentTransform.x}px, ${currentTransform.y}px) rotate(${currentTransform.rotate}deg) scale(${currentTransform.scale})`,
                         transformOrigin: currentTransform.transformOrigin,
                         opacity: currentTransform.opacity,

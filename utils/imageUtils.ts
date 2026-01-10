@@ -20,24 +20,34 @@ export const processImageToGrid = (
     img: HTMLImageElement,
     sourceX = 0,
     sourceY = 0,
-    width = 32,
-    height = 32
+    sourceW?: number,
+    sourceH?: number
 ): GridData => {
+    const targetSize = 32;
     const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
+    canvas.width = targetSize;
+    canvas.height = targetSize;
     const ctx = canvas.getContext('2d');
     if (!ctx) return createEmptyGrid();
 
-    ctx.drawImage(img, sourceX, sourceY, width, height, 0, 0, width, height);
-    const imageData = ctx.getImageData(0, 0, width, height);
+    const sw = Math.floor(Math.max(1, sourceW || img.naturalWidth));
+    const sh = Math.floor(Math.max(1, sourceH || img.naturalHeight));
+    const sx = Math.floor(Math.max(0, sourceX));
+    const sy = Math.floor(Math.max(0, sourceY));
+
+    // Draw the source region into the 32x32 target canvas (scaling automatically)
+    ctx.clearRect(0, 0, targetSize, targetSize);
+    ctx.imageSmoothingEnabled = false; 
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetSize, targetSize);
+    
+    const imageData = ctx.getImageData(0, 0, targetSize, targetSize);
     const data = imageData.data;
 
     const newGrid = createEmptyGrid();
 
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            const i = (y * width + x) * 4;
+    for (let y = 0; y < targetSize; y++) {
+        for (let x = 0; x < targetSize; x++) {
+            const i = (y * targetSize + x) * 4;
             const r = data[i];
             const g = data[i + 1];
             const b = data[i + 2];
@@ -47,7 +57,7 @@ export const processImageToGrid = (
                 const hex =
                     '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
                 const alphaHex = a.toString(16).padStart(2, '0');
-                newGrid[y][x] = hex + alphaHex;
+                newGrid[y][x] = hex + (alphaHex === 'ff' ? '' : alphaHex);
             } else {
                 newGrid[y][x] = '';
             }

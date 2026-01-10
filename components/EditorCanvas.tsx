@@ -280,9 +280,9 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
         <div className="grid relative" style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0, 1fr))`, width: '640px', height: '640px' }} onContextMenu={(e) => e.preventDefault()}>
             {selectionBox && <div className="absolute border-2 border-brand-400 bg-brand-500/10 pointer-events-none z-20" style={{ left: `${selectionBox.x * 20}px`, top: `${selectionBox.y * 20}px`, width: `${selectionBox.w * 20}px`, height: `${selectionBox.h * 20}px` }} />}
             {selection && (
-                <div className="absolute border border-dashed border-white/80 pointer-events-none z-20" style={{ left: `${selection.x * 20}px`, top: `${selection.y * 20}px`, width: `${selection.w * 20}px`, height: `${selection.h * 20}px`, transform: `rotate(${selection.angle}deg)`, transformOrigin: 'center center' }}>
-                    <div className="absolute inset-0 grid" style={{ gridTemplateColumns: `repeat(${selection.w}, 1fr)`, gridTemplateRows: `repeat(${selection.h}, 1fr)` }}>
-                        {selection.floatingPixels.map((row, sy) => row.map((color, sx) => <div key={`${sx}-${sy}`} style={{ backgroundColor: color }} className="w-full h-full" />))}
+                <div className="absolute border border-dashed border-white/80 pointer-events-none z-20" style={{ left: `${selection.x * 20}px`, top: `${selection.y * 20}px`, width: `${Math.max(1, selection.w) * 20}px`, height: `${Math.max(1, selection.h) * 20}px`, transform: `rotate(${selection.angle}deg)`, transformOrigin: 'center center' }}>
+                    <div className="absolute inset-0 grid" style={{ gridTemplateColumns: `repeat(${Math.max(1, selection.w)}, 1fr)`, gridTemplateRows: `repeat(${Math.max(1, selection.h)}, 1fr)` }}>
+                        {selection.floatingPixels.map((row, sy) => row.map((color, sx) => <div key={`${sx}-${sy}`} style={{ backgroundColor: color || 'transparent' }} className="w-full h-full" />))}
                     </div>
                     <div className="absolute -top-1 -left-1 w-2 h-2 bg-white border border-gray-500" /><div className="absolute -top-1 -right-1 w-2 h-2 bg-white border border-gray-500" /><div className="absolute -bottom-1 -left-1 w-2 h-2 bg-white border border-gray-500" /><div className="absolute -bottom-1 -right-1 w-2 h-2 bg-white border border-gray-500" />
                     <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-px h-6 bg-white" />

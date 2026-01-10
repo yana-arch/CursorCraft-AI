@@ -1,4 +1,5 @@
 import { GridData, Layer } from '../types';
+import { generateId } from './imageUtils';
 
 export const GRID_SIZE = 32;
 
@@ -6,7 +7,7 @@ export const createEmptyGrid = (): GridData =>
   Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(''));
 
 export const createLayer = (name: string, grid?: GridData): Layer => ({
-  id: Math.random().toString(36).substr(2, 9),
+  id: generateId(),
   name,
   visible: true,
   opacity: 1.0,

@@ -8,6 +8,7 @@ import RightSidebar from "./components/RightSidebar";
 import ProjectManager from "./components/ProjectManager";
 import SettingsModal from "./components/SettingsModal";
 import AnimationWizard from "./components/AnimationWizard";
+import ImageCropModal from "./components/ImageCropModal";
 import { Frame, AnimationParams } from "./types";
 import { createLayer, createEmptyGrid, composeLayers } from "./utils/layerUtils";
 import { generateId, processImageToGrid } from "./utils/imageUtils";
@@ -34,6 +35,8 @@ function AppInner() {
     setHotspot, undo, redo, canUndo, canRedo,
     updateActiveLayerGrid,
   } = useProject();
+
+  const [pendingCrop, setPendingCrop] = React.useState<{ src: string, mode: 'layer' | 'frame' } | null>(null);
 
   const { handleAIAddFrames, handleApplyGeneratedImage, handleAIStructuredData } = useAIWorkflow();
   const { handleExport, handleExportInstaller } = useProjectExport();
@@ -85,21 +88,57 @@ function AppInner() {
   const handleImport = useCallback((file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const newLayer = createLayer(`Imported Image`, processImageToGrid(img));
-        setFrames((prev) => {
-          if (!prev[activeFrameIndex]) return prev;
-          const newFrames = [...prev];
-          newFrames[activeFrameIndex] = { ...newFrames[activeFrameIndex], layers: [...newFrames[activeFrameIndex].layers, newLayer] };
-          return newFrames;
-        });
-        setActiveLayerId(newLayer.id);
-      };
-      img.src = e.target?.result as string;
+      if (e.target?.result) {
+        setPendingCrop({ src: e.target.result as string, mode: 'layer' });
+      }
     };
     reader.readAsDataURL(file);
-  }, [activeFrameIndex, setFrames, setActiveLayerId]);
+  }, []);
+
+  const handleImportAsFrame = useCallback((file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        setPendingCrop({ src: e.target.result as string, mode: 'frame' });
+      }
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const handleConfirmCrop = useCallback((crop: { x: number, y: number, size: number }) => {
+    if (!pendingCrop) return;
+    const img = new Image();
+    img.onload = () => {
+      const newGrid = processImageToGrid(img, crop.x, crop.y, crop.size, crop.size);
+      const mode = pendingCrop.mode;
+      
+      if (mode === 'layer') {
+        const newLayer = createLayer(`Imported`, newGrid);
+        setFrames((prev) => {
+          const newFrames = [...prev];
+          if (!newFrames[activeFrameIndex]) return prev;
+          newFrames[activeFrameIndex] = { 
+            ...newFrames[activeFrameIndex], 
+            layers: [...newFrames[activeFrameIndex].layers, newLayer] 
+          };
+          return newFrames;
+        });
+        // We delay this slightly to ensure the layer exists in the state if there's any sync check
+        setTimeout(() => setActiveLayerId(newLayer.id), 0);
+      } else {
+        const newLayer = createLayer(`Layer 1`, newGrid);
+        const newFrame: Frame = { id: generateId(), layers: [newLayer], duration: 100 };
+        setFrames((prev) => [...prev, newFrame]);
+        // Same for frame index
+        setTimeout(() => {
+            setActiveFrameIndex(frames.length);
+            setActiveLayerId(newLayer.id);
+        }, 0);
+      }
+      setPendingCrop(null);
+    };
+    img.src = pendingCrop.src;
+  }, [pendingCrop, activeFrameIndex, setFrames, setActiveLayerId, setActiveFrameIndex, frames.length]);
 
   const handleLoadProject = useCallback((project: SavedProject) => {
     resetFrames(project.data.frames);
@@ -134,7 +173,7 @@ function AppInner() {
       <Toolbar />
       <div className="flex-1 flex flex-col min-w-0">
         <Header />
-        <FeatureBar onExport={handleExport} onExportInstaller={handleExportInstaller} onImport={handleImport} onTransform={handleTransform} />
+        <FeatureBar onExport={handleExport} onExportInstaller={handleExportInstaller} onImport={handleImport} onImportAsFrame={handleImportAsFrame} onTransform={handleTransform} />
         <EditorCanvas onionSkinPrev={onionSkinPrev} onionSkinNext={onionSkinNext} onRotateSelection={() => {}} onOpenWizard={() => setIsWizardOpen(true)} />
         <Timeline />
       </div>
@@ -142,6 +181,13 @@ function AppInner() {
       <ProjectManager isOpen={isLibraryOpen} onClose={() => setIsLibraryOpen(false)} onLoadProject={handleLoadProject} onLoadPreset={handleLoadPreset} />
       <SettingsModal />
       <AnimationWizard onGenerate={handleGenerateAnimation} />
+      {pendingCrop && (
+        <ImageCropModal 
+          imageSrc={pendingCrop.src} 
+          onConfirm={handleConfirmCrop} 
+          onCancel={() => setPendingCrop(null)} 
+        />
+      )}
     </div>
   );
 }

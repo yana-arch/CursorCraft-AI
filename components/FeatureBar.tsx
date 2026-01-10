@@ -1,8 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { 
   Upload, Download, Package, FolderOpen, 
   FlipHorizontal, FlipVertical, RotateCw, 
-  Layers, ChevronDown, Save, FileUp
+  Layers, ChevronDown, Save, FileUp, Image as ImageIcon,
+  PlusSquare
 } from 'lucide-react';
 import { useEditor } from '../contexts/EditorContext';
 import { useProject } from '../contexts/ProjectContext';
@@ -11,6 +12,7 @@ interface FeatureBarProps {
   onExport: () => void;
   onExportInstaller: () => void;
   onImport: (file: File) => void;
+  onImportAsFrame: (file: File) => void;
   onTransform: (type: 'flipH' | 'flipV' | 'rotate') => void;
 }
 
@@ -18,6 +20,7 @@ const FeatureBar: React.FC<FeatureBarProps> = ({
   onExport, 
   onExportInstaller, 
   onImport, 
+  onImportAsFrame,
   onTransform 
 }) => {
   const { 
@@ -26,9 +29,28 @@ const FeatureBar: React.FC<FeatureBarProps> = ({
   } = useEditor();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importMode, setImportMode] = useState<'layer' | 'frame'>('layer');
+  const [isImportDropdownOpen, setIsImportDropdownOpen] = useState(false);
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const isShapeActive = ['line', 'rect', 'circle'].includes(activeTool);
   const showBrushOptions = isShapeActive || activeTool === 'pen' || activeTool === 'eraser';
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (importMode === 'layer') onImport(file);
+      else onImportAsFrame(file);
+    }
+    // Reset input
+    e.target.value = '';
+  };
+
+  const triggerImport = (mode: 'layer' | 'frame') => {
+    setImportMode(mode);
+    setIsImportDropdownOpen(false);
+    fileInputRef.current?.click();
+  };
 
   return (
     <div className="h-12 bg-gray-850 border-b border-gray-700 flex items-center px-4 justify-between shrink-0 z-20">
@@ -89,7 +111,7 @@ const FeatureBar: React.FC<FeatureBarProps> = ({
         <input 
           type="file" ref={fileInputRef} className="hidden" 
           accept="image/png, image/jpeg, image/svg+xml"
-          onChange={(e) => e.target.files?.[0] && onImport(e.target.files[0])}
+          onChange={handleFileChange}
         />
         
         <button onClick={() => setIsLibraryOpen(true)} className="flex items-center space-x-2 px-3 py-1.5 bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-600 hover:text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all">
@@ -97,10 +119,48 @@ const FeatureBar: React.FC<FeatureBarProps> = ({
           <span className="hidden sm:inline">Library</span>
         </button>
 
-        <button onClick={() => fileInputRef.current?.click()} className="flex items-center space-x-2 px-3 py-1.5 bg-blue-600/10 border border-blue-500/20 text-blue-400 hover:bg-blue-600 hover:text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all">
-          <FileUp size={14} />
-          <span className="hidden sm:inline">Import</span>
-        </button>
+        {/* Import Dropdown */}
+        <div 
+          className="relative"
+          onMouseEnter={() => { if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current); setIsImportDropdownOpen(true); }}
+          onMouseLeave={() => { closeTimeoutRef.current = setTimeout(() => setIsImportDropdownOpen(false), 300); }}
+        >
+          <button 
+            onClick={() => triggerImport('layer')}
+            className="flex items-center space-x-2 px-3 py-1.5 bg-blue-600/10 border border-blue-500/20 text-blue-400 hover:bg-blue-600 hover:text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+          >
+            <FileUp size={14} />
+            <span className="hidden sm:inline">Import</span>
+            <ChevronDown size={10} className="ml-1 opacity-50" />
+          </button>
+
+          {isImportDropdownOpen && (
+            <div className="absolute right-0 top-full mt-1 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-2xl p-1 flex flex-col min-w-[160px]">
+                <button
+                  onClick={() => triggerImport('layer')}
+                  className="flex items-center space-x-2 p-2 hover:bg-gray-700 rounded text-left transition-colors"
+                >
+                  <ImageIcon size={14} className="text-blue-400" />
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-white uppercase">As New Layer</span>
+                    <span className="text-[8px] text-gray-500">Add to current frame</span>
+                  </div>
+                </button>
+                <button
+                  onClick={() => triggerImport('frame')}
+                  className="flex items-center space-x-2 p-2 hover:bg-gray-700 rounded text-left transition-colors border-t border-gray-750 mt-1 pt-2"
+                >
+                  <PlusSquare size={14} className="text-green-400" />
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-white uppercase">As New Frame</span>
+                    <span className="text-[8px] text-gray-500">Create dedicated frame</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="flex bg-gray-800 rounded-lg p-0.5 border border-gray-700 ml-2">
           <button onClick={onExport} className="flex items-center space-x-2 px-3 py-1 bg-green-600 hover:bg-green-500 text-white rounded-md text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-green-500/10">
