@@ -9,24 +9,73 @@ export const createLayer = (name: string, grid?: GridData): Layer => ({
   id: Math.random().toString(36).substr(2, 9),
   name,
   visible: true,
+  opacity: 1.0,
   grid: grid || createEmptyGrid()
 });
 
+// Helper: Hex8/Hex6 to RGBA
+const hexToRgba = (hex: string) => {
+    let cleanHex = hex.replace('#', '');
+    let r, g, b, a = 1;
+
+    if (cleanHex.length === 3) {
+        r = parseInt(cleanHex[0] + cleanHex[0], 16);
+        g = parseInt(cleanHex[1] + cleanHex[1], 16);
+        b = parseInt(cleanHex[2] + cleanHex[2], 16);
+    } else if (cleanHex.length === 6) {
+        r = parseInt(cleanHex.slice(0, 2), 16);
+        g = parseInt(cleanHex.slice(2, 4), 16);
+        b = parseInt(cleanHex.slice(4, 6), 16);
+    } else if (cleanHex.length === 8) {
+        r = parseInt(cleanHex.slice(0, 2), 16);
+        g = parseInt(cleanHex.slice(2, 4), 16);
+        b = parseInt(cleanHex.slice(4, 6), 16);
+        a = parseInt(cleanHex.slice(6, 8), 16) / 255;
+    } else {
+        return { r: 0, g: 0, b: 0, a: 0 };
+    }
+    return { r, g, b, a };
+};
+
+// Helper: RGBA to Hex8
+const rgbaToHex = (r: number, g: number, b: number, a: number) => {
+    const toHex = (v: number) => Math.min(255, Math.max(0, Math.round(v))).toString(16).padStart(2, '0');
+    const alpha = toHex(a * 255);
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}${alpha === 'ff' ? '' : alpha}`;
+};
+
 // Composes all visible layers into a single grid for display/export
-// Uses a simple painter's algorithm (top layer overwrites bottom)
 export const composeLayers = (layers: Layer[]): GridData => {
   const result = createEmptyGrid();
   
-  // Iterate layers from bottom to top
-  for (const layer of layers) {
-    if (!layer.visible) continue;
-    
-    for (let y = 0; y < GRID_SIZE; y++) {
-      for (let x = 0; x < GRID_SIZE; x++) {
+  for (let y = 0; y < GRID_SIZE; y++) {
+    for (let x = 0; x < GRID_SIZE; x++) {
+      let finalR = 0, finalG = 0, finalB = 0, finalA = 0;
+
+      // Iterate layers from bottom to top
+      for (const layer of layers) {
+        if (!layer.visible || layer.opacity <= 0) continue;
+        
         const color = layer.grid[y][x];
-        if (color) {
-          result[y][x] = color;
+        if (!color) continue;
+
+        const { r, g, b, a } = hexToRgba(color);
+        const layerAlpha = a * layer.opacity;
+
+        if (finalA === 0) {
+            finalR = r; finalG = g; finalB = b; finalA = layerAlpha;
+        } else {
+            // Alpha Blending (Over operator)
+            const outA = layerAlpha + finalA * (1 - layerAlpha);
+            finalR = (r * layerAlpha + finalR * finalA * (1 - layerAlpha)) / outA;
+            finalG = (g * layerAlpha + finalG * finalA * (1 - layerAlpha)) / outA;
+            finalB = (b * layerAlpha + finalB * finalA * (1 - layerAlpha)) / outA;
+            finalA = outA;
         }
+      }
+
+      if (finalA > 0) {
+        result[y][x] = rgbaToHex(finalR, finalG, finalB, finalA);
       }
     }
   }

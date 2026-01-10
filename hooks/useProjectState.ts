@@ -99,6 +99,20 @@ export const useProjectState = () => {
         });
     }, [activeFrameIndex, setFrames]);
 
+    const updateLayerOpacity = useCallback((id: string, opacity: number) => {
+        setFrames((prev) => {
+            if (!prev[activeFrameIndex]) return prev;
+            const newFrames = [...prev];
+            const frame = { ...newFrames[activeFrameIndex] };
+            if (!frame.layers) return prev;
+            frame.layers = frame.layers.map((l) =>
+                l.id === id ? { ...l, opacity: Math.max(0, Math.min(1, opacity)) } : l
+            );
+            newFrames[activeFrameIndex] = frame;
+            return newFrames;
+        });
+    }, [activeFrameIndex, setFrames]);
+
     const moveLayer = useCallback((id: string, direction: 'up' | 'down') => {
         setFrames((prev) => {
             if (!prev[activeFrameIndex]) return prev;
@@ -177,7 +191,7 @@ export const useProjectState = () => {
         activeLayerId, setActiveLayerId,
         activeFrame,
         updateActiveLayerGrid,
-        addLayer, deleteLayer, toggleLayerVisibility, moveLayer,
+        addLayer, deleteLayer, toggleLayerVisibility, updateLayerOpacity, moveLayer,
         addFrame, duplicateFrame, deleteFrame,
     };
 };

@@ -24,6 +24,7 @@ interface RightSidebarProps {
     setActiveLayerId: (id: string) => void;
     addLayer: () => void;
     toggleLayerVisibility: (id: string) => void;
+    updateLayerOpacity: (id: string, opacity: number) => void;
     deleteLayer: (id: string) => void;
     moveLayer: (id: string, direction: 'up' | 'down') => void;
 }
@@ -42,6 +43,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
     activeLayerId, setActiveLayerId,
     addLayer,
     toggleLayerVisibility,
+    updateLayerOpacity,
     deleteLayer,
     moveLayer,
 }) => {
@@ -93,6 +95,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
                     setActiveLayerId={setActiveLayerId}
                     addLayer={addLayer}
                     toggleLayerVisibility={toggleLayerVisibility}
+                    updateLayerOpacity={updateLayerOpacity}
                     deleteLayer={deleteLayer}
                     moveLayer={moveLayer}
                 />

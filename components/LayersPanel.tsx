@@ -8,6 +8,7 @@ interface LayersPanelProps {
   setActiveLayerId: (id: string) => void;
   addLayer: () => void;
   toggleLayerVisibility: (id: string) => void;
+  updateLayerOpacity: (id: string, opacity: number) => void;
   deleteLayer: (id: string) => void;
   moveLayer: (id: string, direction: 'up' | 'down') => void;
 }
@@ -18,6 +19,7 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
   setActiveLayerId,
   addLayer,
   toggleLayerVisibility,
+  updateLayerOpacity,
   deleteLayer,
   moveLayer
 }) => {
@@ -50,55 +52,73 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
             <div 
               key={layer.id}
               onClick={() => setActiveLayerId(layer.id)}
-              className={`group flex items-center justify-between p-2 rounded-md cursor-pointer transition-all border ${
+              className={`group flex flex-col p-2 rounded-md cursor-pointer transition-all border ${
                 activeLayerId === layer.id 
                   ? 'bg-brand-900/40 border-brand-600/50' 
                   : 'bg-gray-800 border-transparent hover:bg-gray-750'
               }`}
             >
-              <div className="flex items-center space-x-3 overflow-hidden">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleLayerVisibility(layer.id);
-                  }}
-                  className={`text-gray-500 hover:text-gray-300 ${!layer.visible && 'opacity-50'}`}
-                >
-                  {layer.visible ? <Eye size={14} /> : <EyeOff size={14} />}
-                </button>
-                <span className={`text-xs truncate select-none ${activeLayerId === layer.id ? 'text-white font-medium' : 'text-gray-400'}`}>
-                  {layer.name}
-                </span>
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center space-x-3 overflow-hidden">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleLayerVisibility(layer.id);
+                    }}
+                    className={`text-gray-500 hover:text-gray-300 ${!layer.visible && 'opacity-50'}`}
+                  >
+                    {layer.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+                  </button>
+                  <span className={`text-xs truncate select-none ${activeLayerId === layer.id ? 'text-white font-medium' : 'text-gray-400'}`}>
+                    {layer.name}
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex flex-col">
+                      <button 
+                          onClick={(e) => { e.stopPropagation(); moveLayer(layer.id, 'up'); }}
+                          disabled={originalIndex === layers.length - 1}
+                          className="text-gray-500 hover:text-white disabled:opacity-30"
+                      >
+                          <ChevronUp size={10} />
+                      </button>
+                      <button 
+                          onClick={(e) => { e.stopPropagation(); moveLayer(layer.id, 'down'); }}
+                          disabled={originalIndex === 0}
+                          className="text-gray-500 hover:text-white disabled:opacity-30"
+                      >
+                          <ChevronDown size={10} />
+                      </button>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteLayer(layer.id);
+                    }}
+                    disabled={layers.length <= 1}
+                    className="p-1 text-gray-500 hover:text-red-400 disabled:opacity-30"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
               </div>
 
-              <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="flex flex-col">
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); moveLayer(layer.id, 'up'); }}
-                        disabled={originalIndex === layers.length - 1}
-                        className="text-gray-500 hover:text-white disabled:opacity-30"
-                    >
-                        <ChevronUp size={10} />
-                    </button>
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); moveLayer(layer.id, 'down'); }}
-                        disabled={originalIndex === 0}
-                        className="text-gray-500 hover:text-white disabled:opacity-30"
-                    >
-                        <ChevronDown size={10} />
-                    </button>
+              {activeLayerId === layer.id && (
+                <div className="mt-2 px-1 flex items-center space-x-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <span className="text-[9px] text-gray-500 font-bold uppercase w-12">Opacity</span>
+                  <input 
+                    type="range" min="0" max="1" step="0.01"
+                    value={layer.opacity ?? 1}
+                    onChange={(e) => updateLayerOpacity(layer.id, parseFloat(e.target.value))}
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex-1 h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-brand-500"
+                  />
+                  <span className="text-[9px] text-brand-400 font-mono w-6 text-right">
+                    {Math.round((layer.opacity ?? 1) * 100)}%
+                  </span>
                 </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteLayer(layer.id);
-                  }}
-                  disabled={layers.length <= 1}
-                  className="p-1 text-gray-500 hover:text-red-400 disabled:opacity-30"
-                >
-                  <Trash2 size={12} />
-                </button>
-              </div>
+              )}
             </div>
           );
         })}

@@ -63,7 +63,7 @@ function App() {
     activeLayerId, setActiveLayerId,
     activeFrame,
     updateActiveLayerGrid,
-    addLayer, deleteLayer, toggleLayerVisibility, moveLayer,
+    addLayer, deleteLayer, toggleLayerVisibility, updateLayerOpacity, moveLayer,
     addFrame, duplicateFrame, deleteFrame,
   } = useProjectState();
 
@@ -382,6 +382,7 @@ function App() {
         setActiveLayerId={setActiveLayerId}
         addLayer={addLayer}
         toggleLayerVisibility={toggleLayerVisibility}
+        updateLayerOpacity={updateLayerOpacity}
         deleteLayer={deleteLayer}
         moveLayer={moveLayer}
       />

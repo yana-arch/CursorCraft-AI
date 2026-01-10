@@ -12,11 +12,13 @@ export interface Point {
 export type GridData = string[][]; // 2D array of hex colors or empty strings (transparent)
 
 export interface Layer {
-  id: string;
-  name: string;
-  visible: boolean;
-  grid: GridData;
+    id: string;
+    name: string;
+    grid: GridData;
+    visible: boolean;
+    opacity: number; // 0.0 to 1.0
 }
+
 
 export interface Frame {
   id: string;
