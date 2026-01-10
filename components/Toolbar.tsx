@@ -1,38 +1,29 @@
 import React, { useRef, useState } from 'react';
 import { MousePointer2, Eraser, Pipette, Crosshair, Download, Grid3X3, Upload, PaintBucket, FolderOpen, BoxSelect, Layers, Wand2, RotateCw, FlipHorizontal, FlipVertical, Package, Minus, Square, Circle, ChevronRight } from 'lucide-react';
 import { ToolType, DrawMode } from '../types';
+import { useEditor } from '../contexts/EditorContext';
 
 interface ToolbarProps {
-  activeTool: ToolType;
-  setTool: (t: ToolType) => void;
-  brushSize: number;
-  setBrushSize: (s: number) => void;
-  drawMode: DrawMode;
-  setDrawMode: (m: DrawMode) => void;
   onExport: () => void;
   onExportInstaller: () => void;
   onImport: (file: File) => void;
-  onOpenLibrary: () => void;
-  onionSkinEnabled: boolean;
-  toggleOnionSkin: () => void;
   onTransform: (type: 'flipH' | 'flipV' | 'rotate') => void;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({ 
-  activeTool, 
-  setTool, 
-  brushSize,
-  setBrushSize,
-  drawMode,
-  setDrawMode,
   onExport, 
   onExportInstaller,
   onImport, 
-  onOpenLibrary,
-  onionSkinEnabled,
-  toggleOnionSkin,
   onTransform
 }) => {
+  const { 
+    activeTool, setActiveTool, 
+    brushSize, setBrushSize, 
+    drawMode, setDrawMode,
+    setIsLibraryOpen,
+    onionSkinEnabled, setOnionSkinEnabled
+  } = useEditor();
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isShapeDropdownOpen, setIsShapeDropdownOpen] = useState(false);
   const [lastShapeTool, setLastShapeTool] = useState<ToolType>('rect');
@@ -79,7 +70,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
           <button
             key={tool.id}
             onClick={() => {
-                setTool(tool.id);
+                setActiveTool(tool.id);
                 setIsShapeDropdownOpen(false);
             }}
             title={tool.label}
@@ -108,7 +99,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
         >
             <button
                 onClick={() => {
-                    setTool(lastShapeTool);
+                    setActiveTool(lastShapeTool);
                     setIsShapeDropdownOpen(!isShapeDropdownOpen);
                 }}
                 title="Shapes"
@@ -130,7 +121,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
                             <button
                                 key={st.id}
                                 onClick={() => {
-                                    setTool(st.id);
+                                    setActiveTool(st.id);
                                     setLastShapeTool(st.id);
                                     if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
                                     setIsShapeDropdownOpen(false);
@@ -156,7 +147,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
           <button
             key={tool.id}
             onClick={() => {
-                setTool(tool.id);
+                setActiveTool(tool.id);
                 setIsShapeDropdownOpen(false);
             }}
             title={tool.label}
@@ -208,7 +199,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
       <div className="flex flex-col space-y-2 w-full px-2 pt-2 border-t border-gray-750 shrink-0">
           <div className="text-xs text-gray-500 font-bold uppercase text-center mb-1">View</div>
           <button
-            onClick={toggleOnionSkin}
+            onClick={() => setOnionSkinEnabled(!onionSkinEnabled)}
             title={`Onion Skin: ${onionSkinEnabled ? 'ON' : 'OFF'}`}
             className={`p-3 rounded-lg transition-all duration-200 flex justify-center ${
               onionSkinEnabled
@@ -237,7 +228,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
         </button>
 
         <button
-            onClick={onOpenLibrary}
+            onClick={() => setIsLibraryOpen(true)}
             className="p-3 text-indigo-400 hover:bg-indigo-900/30 hover:text-indigo-300 rounded-lg flex justify-center"
             title="Library & Save"
         >

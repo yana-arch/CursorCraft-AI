@@ -3,14 +3,12 @@ import { X, Save, FolderOpen, Trash2, Clock, Monitor } from 'lucide-react';
 import { SavedProject, getSavedProjects, saveProject, deleteProject } from '../utils/storage.ts';
 import { PRESETS } from '../utils/presets.ts';
 import { Frame, Point } from '../types';
+import { useEditor } from '../contexts/EditorContext';
+import { useProject } from '../contexts/ProjectContext';
 
 interface ProjectManagerProps {
     isOpen: boolean;
     onClose: () => void;
-    currentFrames: Frame[];
-    currentHotspot: Point;
-    primaryColor: string;
-    secondaryColor: string;
     onLoadProject: (project: SavedProject) => void;
     onLoadPreset: (frames: Frame[]) => void;
 }
@@ -18,13 +16,11 @@ interface ProjectManagerProps {
 const ProjectManager: React.FC<ProjectManagerProps> = ({
     isOpen,
     onClose,
-    currentFrames,
-    currentHotspot,
-    primaryColor,
-    secondaryColor,
     onLoadProject,
     onLoadPreset
 }) => {
+    const { primaryColor, secondaryColor } = useEditor();
+    const { frames: currentFrames, hotspot: currentHotspot } = useProject();
     const [activeTab, setActiveTab] = useState<'save' | 'load' | 'presets'>('save');
     const [projectName, setProjectName] = useState('');
     const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);

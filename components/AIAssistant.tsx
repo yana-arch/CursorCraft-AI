@@ -2,16 +2,17 @@ import React, { useState, useRef } from 'react';
 import { Sparkles, Loader2, MessageSquare, Image as ImageIcon, Crosshair, Film, Upload, X, ArrowDownToLine, Layers } from 'lucide-react';
 import { generateCursorConcept, suggestCursorImprovements, detectHotspotAI, generateAnimationSequence, generateCursorFromImage, generateStructuredAnimation } from '../services/geminiService';
 import { GridData, Point, AIAnimationResponse } from '../types';
+import { useProject } from '../contexts/ProjectContext';
 
 interface AIAssistantProps {
   currentGrid: GridData;
-  setHotspot: (p: Point) => void;
   onAddFrames: (base64Image: string) => void;
   onApplyImage: (base64Image: string) => void;
   onApplyStructuredAI?: (data: AIAnimationResponse) => void;
 }
 
-const AIAssistant: React.FC<AIAssistantProps> = ({ currentGrid, setHotspot, onAddFrames, onApplyImage, onApplyStructuredAI }) => {
+const AIAssistant: React.FC<AIAssistantProps> = ({ currentGrid, onAddFrames, onApplyImage, onApplyStructuredAI }) => {
+  const { setHotspot } = useProject();
   const [prompt, setPrompt] = useState('');
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
