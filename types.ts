@@ -78,17 +78,17 @@ export interface AnimationParams {
 
 // --- AI Structured Data Types ---
 
-export interface AIDot {
-    x: number;
-    y: number;
-    color: string; // Hex
-    type: 'subject' | 'effect' | 'ui';
-    opacity: number; // 0.0 to 1.0
+export type AICallMethod = 'drawLine' | 'drawRect' | 'drawCircle' | 'drawPointer' | 'drawHand';
+
+export interface AICall {
+    method: AICallMethod;
+    params: any[]; // e.g., [x0, y0, x1, y1, color] or [x, y, w, h, color]
+    layerType: 'subject' | 'effect' | 'ui';
 }
 
 export interface AIFrame {
     frame_id: number;
-    dots: AIDot[];
+    calls: AICall[];
 }
 
 export interface AIAnimationMetadata {

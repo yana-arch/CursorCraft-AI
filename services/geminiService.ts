@@ -199,25 +199,28 @@ export const generateStructuredAnimation = async (
         const enhancedPrompt = `
             You are a Master Cursor Designer & Pixel Art Architect. 
             
-            CRITICAL OBJECTIVE: Analyze the provided image and extract its shape and colors with PIXEL-PERFECT FIDELITY for the "subject" layer. 
-            The user's request is: "${prompt}".
+            OBJECTIVE: Design an animated cursor based on the user's request: "${prompt}".
+            Instead of raw pixels, you must use high-level DRAWING METHODS to define each frame.
 
-            Instructions:
-            1. **Fidelity First**: The "subject" layer must represent the core object from the input image as accurately as possible within a 32x32 grid. Do not simplify the shape unless necessary for the grid size. Use the exact color palette from the image.
-            2. **Smart Decomposition**: 
-               - "subject": The main cursor/pointer body (extracted from the image).
-               - "effect": Animation elements like glowing auras, particles, trails, or shadows that ENHANCE the subject without replacing it.
-            3. **Animation Logic**: Create a smooth, looping sequence of 8-12 frames. 
-               - The "subject" should remain stable or move slightly (e.g., breathing, hovering).
-               - The "effect" layer should handle the dynamic parts of the animation.
-            4. **Hotspot**: Precisely identify the active pixel (tip of the arrow, center of crosshair, etc.).
-            5. **Technical Spec**: 32x32 grid. Coordinates (x,y) from 0-31. Colors in Hex. Opacity 0.0-1.0.
+            AVAILABLE METHODS:
+            1. "drawLine": [x0, y0, x1, y1, color]
+            2. "drawRect": [x, y, w, h, color]
+            3. "drawCircle": [cx, cy, r, color]
+            4. "drawPointer": [color, offsetX, offsetY]
+            5. "drawHand": [color, offsetX, offsetY]
 
-            Your output must be a valid JSON object mirroring this professional preset architecture.
+            INSTRUCTIONS:
+            - "subject": The main cursor body. Use "drawPointer" or "drawHand" for standard shapes, or "drawRect"/"drawLine" for custom ones.
+            - "effect": Animation elements like glowing lines, particles (small rects), or halos (circles).
+            - Create a smooth 8-12 frame loop.
+            - The "subject" should be extracted from the user's intent or the provided image.
+            
+            Technical Spec: 32x32 grid. Colors in Hex.
+            Output must be a valid JSON object.
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview', // Using 2.5 Flash for JSON handling capabilities
+            model: 'gemini-3-flash-preview', 
             contents: {
                 parts: [
                     {
@@ -252,16 +255,14 @@ export const generateStructuredAnimation = async (
                                 type: Type.OBJECT,
                                 properties: {
                                     frame_id: { type: Type.INTEGER },
-                                    dots: {
+                                    calls: {
                                         type: Type.ARRAY,
                                         items: {
                                             type: Type.OBJECT,
                                             properties: {
-                                                x: { type: Type.INTEGER },
-                                                y: { type: Type.INTEGER },
-                                                color: { type: Type.STRING },
-                                                type: { type: Type.STRING, enum: ["subject", "effect", "ui"] },
-                                                opacity: { type: Type.NUMBER }
+                                                method: { type: Type.STRING, enum: ["drawLine", "drawRect", "drawCircle", "drawPointer", "drawHand"] },
+                                                params: { type: Type.ARRAY, items: { type: Type.STRING } }, // Flexible array for params
+                                                layerType: { type: Type.STRING, enum: ["subject", "effect", "ui"] }
                                             }
                                         }
                                     }
