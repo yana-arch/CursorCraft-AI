@@ -24,6 +24,10 @@ interface EditorContextType {
     setIsWizardOpen: (v: boolean) => void;
     onionSkinEnabled: boolean;
     setOnionSkinEnabled: (v: boolean) => void;
+    onionSkinOpacity: number;
+    setOnionSkinOpacity: (v: number) => void;
+    onionSkinRange: number;
+    setOnionSkinRange: (v: number) => void;
     
     // Generic Custom Pivot State
     customPivot: Point | undefined;
@@ -41,6 +45,8 @@ interface EditorContextType {
     saveSettings: (s: AnimationSettings) => void;
     selection: SelectionState | null;
     setSelection: (s: SelectionState | null) => void;
+    magicWandTolerance: number;
+    setMagicWandTolerance: (v: number) => void;
 }
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
@@ -57,6 +63,8 @@ export const EditorProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isWizardOpen, setIsWizardOpen] = useState(false);
     const [onionSkinEnabled, setOnionSkinEnabled] = useState(false);
+    const [onionSkinOpacity, setOnionSkinOpacity] = useState(0.3);
+    const [onionSkinRange, setOnionSkinRange] = useState(1);
 
     // Generic Custom Pivot State
     const [customPivot, setCustomPivot] = useState<Point | undefined>(undefined);
@@ -81,6 +89,7 @@ export const EditorProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }, []);
 
     const [selection, setSelection] = useState<SelectionState | null>(null);
+    const [magicWandTolerance, setMagicWandTolerance] = useState(0);
 
     const value: EditorContextType = {
         activeTool, setActiveTool,
@@ -94,12 +103,15 @@ export const EditorProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         isSettingsOpen, setIsSettingsOpen,
         isWizardOpen, setIsWizardOpen,
         onionSkinEnabled, setOnionSkinEnabled,
+        onionSkinOpacity, setOnionSkinOpacity,
+        onionSkinRange, setOnionSkinRange,
         customPivot, setCustomPivot,
         isPickingCustomPivot, setIsPickingCustomPivot,
         pathPoints, setPathPoints,
         isPickingPath, setIsPickingPath,
         settings, saveSettings,
         selection, setSelection,
+        magicWandTolerance, setMagicWandTolerance
     };
 
     return <EditorContext.Provider value={value}>{children}</EditorContext.Provider>;

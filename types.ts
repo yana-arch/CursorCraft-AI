@@ -1,6 +1,6 @@
 
 
-export type ToolType = 'pen' | 'eraser' | 'picker' | 'fill' | 'hotspot' | 'select' | 'magicWand' | 'line' | 'rect' | 'circle';
+export type ToolType = 'pen' | 'eraser' | 'picker' | 'fill' | 'hotspot' | 'select' | 'magicWand' | 'line' | 'rect' | 'circle' | 'lasso';
 
 export type DrawMode = 'stroke' | 'fill';
 
@@ -11,12 +11,15 @@ export interface Point {
 
 export type GridData = string[][]; // 2D array of hex colors or empty strings (transparent)
 
+export type BlendMode = 'normal' | 'multiply' | 'screen' | 'overlay' | 'additive';
+
 export interface Layer {
     id: string;
     name: string;
     grid: GridData;
     visible: boolean;
     opacity: number; // 0.0 to 1.0
+    blendMode: BlendMode;
 }
 
 

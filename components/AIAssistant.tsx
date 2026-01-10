@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Sparkles, Loader2, MessageSquare, Image as ImageIcon, Crosshair, Film, Upload, X, ArrowDownToLine, Layers } from 'lucide-react';
-import { generateCursorConcept, suggestCursorImprovements, detectHotspotAI, generateAnimationSequence, generateCursorFromImage, generateStructuredAnimation } from '../services/geminiService';
+import { generateCursorConcept, suggestCursorImprovements, detectHotspotAI, generateAnimationSequence, generateCursorFromImage, generateStructuredAnimation, refineSketch } from '../services/geminiService';
 import { GridData, Point, AIAnimationResponse } from '../types';
 import { useProject } from '../contexts/ProjectContext';
 
@@ -120,10 +120,8 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ currentGrid, onAddFrames, onA
 
   // NEW: Smart Structured Animation
   const handleSmartStructuredAnimate = async () => {
-      // Use uploaded reference image OR current canvas if no upload
       const sourceImage = referenceImage || getGridBase64();
       const userPrompt = prompt.trim() || "Animate this cursor";
-
       if (sourceImage && onApplyStructuredAI) {
           setIsLoading(true);
           setSuggestion(null);
@@ -142,6 +140,23 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ currentGrid, onAddFrames, onA
           }
       } else {
           setSuggestion("Please upload an image or draw on canvas first.");
+      }
+  };
+
+  const handleRefine = async () => {
+      const b64 = getGridBase64();
+      if (!b64) return;
+      setIsLoading(true);
+      setSuggestion(null);
+      setGeneratedImage(null);
+      try {
+          const result = await refineSketch(b64, prompt || "professional cursor");
+          if (result) setGeneratedImage(result);
+          else setSuggestion("Refinement failed.");
+      } catch (e) {
+          setSuggestion("AI Error.");
+      } finally {
+          setIsLoading(false);
       }
   };
 
@@ -228,15 +243,25 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ currentGrid, onAddFrames, onA
                     <span>Concept Art</span>
                 </button>
 
-                 <button
+                  <button
                     onClick={handleSmartStructuredAnimate}
                     disabled={isLoading}
                     className="bg-brand-900/40 hover:bg-brand-900/60 border border-brand-500/50 text-brand-300 text-[10px] font-bold py-2 rounded-lg transition-colors flex flex-col items-center justify-center space-y-1"
                 >
                     {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Layers size={14} />}
-                    <span>Smart Animate (Layers)</span>
+                    <span>Smart Animate</span>
+                </button>
+
+                <button
+                    onClick={handleRefine}
+                    disabled={isLoading}
+                    className="bg-purple-900/40 hover:bg-purple-900/60 border border-purple-500/50 text-purple-300 text-[10px] font-bold py-2 rounded-lg transition-colors flex flex-col items-center justify-center space-y-1 col-span-2"
+                >
+                    {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                    <span>AI Refine Sketch (Polish)</span>
                 </button>
             </div>
+
         </div>
 
         {/* Result Display for Concept Art */}

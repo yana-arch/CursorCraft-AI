@@ -30,6 +30,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
     pathPoints, setPathPoints,
     isPickingCustomPivot,
     isPickingPath,
+    magicWandTolerance,
   } = useEditor();
 
   const {
@@ -46,6 +47,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
   const [dragStart, setDragStart] = useState<Point>({ x: 0, y: 0 });
   const [previewGrid, setPreviewGrid] = useState<GridData | null>(null);
   const [selectionBox, setSelectionBox] = useState<{ x: number, y: number, w: number, h: number } | null>(null);
+  const [lassoPath, setLassoPath] = useState<Point[]>([]);
 
   const GRID_SIZE = 32;
   const selectionStartRef = useRef<Point | null>(null);
@@ -114,6 +116,27 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
     return newGrid;
   };
 
+  const isColorSimilar = (col1: string, col2: string, tolerance: number): boolean => {
+      if (col1 === col2) return true;
+      if (!col1 || !col2) return false;
+      
+      const parse = (c: string) => {
+          const r = parseInt(c.slice(1, 3), 16);
+          const g = parseInt(c.slice(3, 5), 16);
+          const b = parseInt(c.slice(5, 7), 16);
+          return { r, g, b };
+      };
+      
+      const c1 = parse(col1);
+      const c2 = parse(col2);
+      const diff = Math.sqrt(
+          Math.pow(c1.r - c2.r, 2) + 
+          Math.pow(c1.g - c2.g, 2) + 
+          Math.pow(c1.b - c2.b, 2)
+      );
+      return diff <= tolerance;
+  };
+
   const performMagicWandSelect = (startX: number, startY: number, currentGrid: GridData) => {
       const targetColor = currentGrid[startY][startX];
       const queue: [number, number][] = [[startX, startY]];
@@ -125,7 +148,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
           if (visited.has(key)) continue;
           visited.add(key);
           if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) continue;
-          if (currentGrid[y][x] !== targetColor) continue;
+          if (!isColorSimilar(currentGrid[y][x], targetColor, magicWandTolerance)) continue;
           pixels.push({x, y, color: currentGrid[y][x]});
           queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
       }
@@ -152,6 +175,13 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
     if (isPickingCustomPivot) { setCustomPivot({ x, y }); return; }
     if (isPickingPath) { setPathPoints([...pathPoints, { x, y }]); return; }
+
+    if (activeTool === 'lasso') {
+        if (selection) commitSelection();
+        setIsDrawing(true);
+        setLassoPath([{ x, y }]);
+        return;
+    }
 
     if (activeTool === 'select' || activeTool === 'magicWand' || activeTool === 'line' || activeTool === 'rect' || activeTool === 'circle') {
         if (activeTool !== 'select' && activeTool !== 'magicWand') {
@@ -182,6 +212,10 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
   };
 
   const handleMouseEnter = (e: React.MouseEvent, x: number, y: number) => {
+    if (activeTool === 'lasso' && isDrawing) {
+        setLassoPath(prev => [...prev, { x, y }]);
+        return;
+    }
     if (activeTool === 'select' || activeTool === 'magicWand') {
         if (isRotatingSelection && selection) {
             const centerX = selection.x + selection.w / 2, centerY = selection.y + selection.h / 2;
@@ -221,7 +255,49 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
       } else handleMouseEnter(e, x, y);
   };
 
+  const isPointInPoly = (px: number, py: number, poly: Point[]) => {
+      let inside = false;
+      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+          const xi = poly[i].x, yi = poly[i].y;
+          const xj = poly[j].x, yj = poly[j].y;
+          const intersect = ((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+          if (intersect) inside = !inside;
+      }
+      return inside;
+  };
+
   const handleMouseUp = () => {
+    if (activeTool === 'lasso' && isDrawing && lassoPath.length > 2) {
+        let minX = GRID_SIZE, minY = GRID_SIZE, maxX = 0, maxY = 0;
+        const affectedPixels: {x: number, y: number, color: string}[] = [];
+        
+        for (let y = 0; y < GRID_SIZE; y++) {
+            for (let x = 0; x < GRID_SIZE; x++) {
+                if (isPointInPoly(x, y, lassoPath)) {
+                    const color = grid[y][x];
+                    if (color) {
+                        affectedPixels.push({ x, y, color });
+                        if (x < minX) minX = x; if (x > maxX) maxX = x;
+                        if (y < minY) minY = y; if (y > maxY) maxY = y;
+                    }
+                }
+            }
+        }
+
+        if (affectedPixels.length > 0) {
+            const w = maxX - minX + 1, h = maxY - minY + 1;
+            const floating = Array(h).fill(null).map(() => Array(w).fill(''));
+            const newGrid = grid.map(row => [...row]);
+            affectedPixels.forEach(p => {
+                floating[p.y - minY][p.x - minX] = p.color;
+                newGrid[p.y][p.x] = '';
+            });
+            setGrid(newGrid);
+            setSelection({ x: minX, y: minY, w, h, floatingPixels: floating, angle: 0 });
+        }
+        setLassoPath([]);
+    }
+
     if (activeTool === 'line' || activeTool === 'rect' || activeTool === 'circle') {
         if (isDrawing && previewGrid) {
             setGrid(prev => {
@@ -278,6 +354,17 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
     <div className="flex-1 bg-gray-950 flex flex-col items-center justify-center relative overflow-hidden">
       <div className="relative shadow-2xl shadow-black/50 border border-gray-800">
         <div className="grid relative" style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0, 1fr))`, width: '640px', height: '640px' }} onContextMenu={(e) => e.preventDefault()}>
+            {lassoPath.length > 1 && (
+                <svg className="absolute inset-0 w-full h-full pointer-events-none z-[70]" viewBox={`0 0 ${GRID_SIZE} ${GRID_SIZE}`}>
+                    <polyline 
+                        points={lassoPath.map(p => `${p.x + 0.5},${p.y + 0.5}`).join(' ')} 
+                        fill="rgba(59, 130, 246, 0.2)" 
+                        stroke="#3b82f6" 
+                        strokeWidth="0.5" 
+                        strokeDasharray="1,1"
+                    />
+                </svg>
+            )}
             {selectionBox && <div className="absolute border-2 border-brand-400 bg-brand-500/10 pointer-events-none z-20" style={{ left: `${selectionBox.x * 20}px`, top: `${selectionBox.y * 20}px`, width: `${selectionBox.w * 20}px`, height: `${selectionBox.h * 20}px` }} />}
             {selection && (
                 <div className="absolute border border-dashed border-white/80 pointer-events-none z-20" style={{ left: `${selection.x * 20}px`, top: `${selection.y * 20}px`, width: `${Math.max(1, selection.w) * 20}px`, height: `${Math.max(1, selection.h) * 20}px`, transform: `rotate(${selection.angle}deg)`, transformOrigin: 'center center' }}>

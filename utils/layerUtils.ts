@@ -11,6 +11,7 @@ export const createLayer = (name: string, grid?: GridData): Layer => ({
   name,
   visible: true,
   opacity: 1.0,
+  blendMode: 'normal',
   grid: grid || createEmptyGrid()
 });
 
@@ -53,10 +54,8 @@ export const composeLayers = (layers: Layer[]): GridData => {
     for (let x = 0; x < GRID_SIZE; x++) {
       let finalR = 0, finalG = 0, finalB = 0, finalA = 0;
 
-      // Iterate layers from bottom to top
       for (const layer of layers) {
         if (!layer.visible || layer.opacity <= 0) continue;
-        
         const color = layer.grid[y][x];
         if (!color) continue;
 
@@ -66,11 +65,34 @@ export const composeLayers = (layers: Layer[]): GridData => {
         if (finalA === 0) {
             finalR = r; finalG = g; finalB = b; finalA = layerAlpha;
         } else {
-            // Alpha Blending (Over operator)
+            // Apply Blend Mode logic
+            let srcR = r, srcG = g, srcB = b;
+            
+            if (layer.blendMode === 'multiply') {
+                srcR = (r * finalR) / 255;
+                srcG = (g * finalG) / 255;
+                srcB = (b * finalB) / 255;
+            } else if (layer.blendMode === 'screen') {
+                srcR = 255 - ((255 - r) * (255 - finalR)) / 255;
+                srcG = 255 - ((255 - g) * (255 - finalG)) / 255;
+                srcB = 255 - ((255 - b) * (255 - finalB)) / 255;
+            } else if (layer.blendMode === 'additive') {
+                srcR = Math.min(255, r + finalR);
+                srcG = Math.min(255, g + finalG);
+                srcB = Math.min(255, b + finalB);
+            } else if (layer.blendMode === 'overlay') {
+                const overlay = (base: number, blend: number) => 
+                    base < 128 ? (2 * base * blend) / 255 : 255 - (2 * (255 - base) * (255 - blend)) / 255;
+                srcR = overlay(finalR, r);
+                srcG = overlay(finalG, g);
+                srcB = overlay(finalB, b);
+            }
+
+            // Standard Alpha Blending (Over operator) with blended source
             const outA = layerAlpha + finalA * (1 - layerAlpha);
-            finalR = (r * layerAlpha + finalR * finalA * (1 - layerAlpha)) / outA;
-            finalG = (g * layerAlpha + finalG * finalA * (1 - layerAlpha)) / outA;
-            finalB = (b * layerAlpha + finalB * finalA * (1 - layerAlpha)) / outA;
+            finalR = (srcR * layerAlpha + finalR * finalA * (1 - layerAlpha)) / outA;
+            finalG = (srcG * layerAlpha + finalG * finalA * (1 - layerAlpha)) / outA;
+            finalB = (srcB * layerAlpha + finalB * finalA * (1 - layerAlpha)) / outA;
             finalA = outA;
         }
       }
@@ -80,7 +102,6 @@ export const composeLayers = (layers: Layer[]): GridData => {
       }
     }
   }
-  
   return result;
 };
 

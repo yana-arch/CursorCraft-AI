@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
-import { Frame, GridData, Point } from '../types';
+import { Frame, GridData, Point, BlendMode } from '../types';
 import { useHistory } from '../hooks/useHistory';
 import { createLayer } from '../utils/layerUtils';
 import { generateId } from '../utils/imageUtils';
@@ -24,10 +24,12 @@ interface ProjectContextType {
     deleteLayer: (id: string) => void;
     toggleLayerVisibility: (id: string) => void;
     updateLayerOpacity: (id: string, opacity: number) => void;
+    updateLayerBlendMode: (id: string, mode: BlendMode) => void;
     moveLayer: (id: string, direction: 'up' | 'down') => void;
     addFrame: () => void;
     duplicateFrame: (index: number) => void;
     deleteFrame: (index: number) => void;
+    reorderFrames: (startIndex: number, endIndex: number) => void;
     resetFrames: (f: Frame[]) => void;
 
     // History
@@ -158,6 +160,17 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         });
     }, [activeFrameIndex, setFrames]);
 
+    const updateLayerBlendMode = useCallback((id: string, mode: BlendMode) => {
+        setFrames((prev) => {
+            if (!prev[activeFrameIndex]) return prev;
+            const newFrames = [...prev];
+            const frame = { ...newFrames[activeFrameIndex] };
+            frame.layers = frame.layers.map((l) => l.id === id ? { ...l, blendMode: mode } : l);
+            newFrames[activeFrameIndex] = frame;
+            return newFrames;
+        });
+    }, [activeFrameIndex, setFrames]);
+
     const moveLayer = useCallback((id: string, direction: 'up' | 'down') => {
         setFrames((prev) => {
             if (!prev[activeFrameIndex]) return prev;
@@ -207,12 +220,22 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         setActiveFrameIndex((prevIdx) => prevIdx >= frames.length - 1 ? Math.max(0, frames.length - 2) : prevIdx);
     }, [frames.length, setFrames]);
 
+    const reorderFrames = useCallback((startIndex: number, endIndex: number) => {
+        setFrames((prev) => {
+            const result = [...prev];
+            const [removed] = result.splice(startIndex, 1);
+            result.splice(endIndex, 0, removed);
+            return result;
+        });
+        setActiveFrameIndex(endIndex);
+    }, [setFrames]);
+
     const value = {
         frames, setFrames, activeFrameIndex, setActiveFrameIndex, activeLayerId, setActiveLayerId,
         activeFrame, activeLayerGrid, backgroundGrid, foregroundGrid,
         hotspot, setHotspot,
-        updateActiveLayerGrid, addLayer, deleteLayer, toggleLayerVisibility, updateLayerOpacity, moveLayer,
-        addFrame, duplicateFrame, deleteFrame, resetFrames,
+        updateActiveLayerGrid, addLayer, deleteLayer, toggleLayerVisibility, updateLayerOpacity, updateLayerBlendMode, moveLayer,
+        addFrame, duplicateFrame, deleteFrame, reorderFrames, resetFrames,
         undo, redo, canUndo, canRedo
     };
 

@@ -10,7 +10,7 @@ import SettingsModal from "./components/SettingsModal";
 import AnimationWizard from "./components/AnimationWizard";
 import ImageCropModal from "./components/ImageCropModal";
 import { Frame, AnimationParams } from "./types";
-import { createLayer, createEmptyGrid, composeLayers } from "./utils/layerUtils";
+import { createLayer, createEmptyGrid, composeLayers, adjustOpacity } from "./utils/layerUtils";
 import { generateId, processImageToGrid } from "./utils/imageUtils";
 import { calculateAnimationFrames } from "./utils/animationGenerator";
 import { SavedProject } from "./utils/storage";
@@ -24,7 +24,8 @@ import { EditorProvider, useEditor } from "./contexts/EditorContext";
 function AppInner() {
   const {
     activeTool, setActiveTool, setPrimaryColor, setSecondaryColor,
-    isLibraryOpen, setIsLibraryOpen, setIsSettingsOpen, setIsWizardOpen, onionSkinEnabled, setOnionSkinEnabled,
+    isLibraryOpen, setIsLibraryOpen, setIsSettingsOpen, setIsWizardOpen, 
+    onionSkinEnabled, setOnionSkinEnabled, onionSkinOpacity, onionSkinRange,
     customPivot, setCustomPivot, setPathPoints, setIsPickingCustomPivot, setIsPickingPath,
     settings, selection, setSelection
   } = useEditor();
@@ -77,13 +78,35 @@ function AppInner() {
 
   const { onionSkinPrev, onionSkinNext } = useMemo(() => {
     if (!onionSkinEnabled || frames.length <= 1) return { onionSkinPrev: undefined, onionSkinNext: undefined };
-    const prevIdx = (activeFrameIndex - 1 + frames.length) % frames.length;
-    const nextIdx = (activeFrameIndex + 1) % frames.length;
-    return {
-      onionSkinPrev: frames[prevIdx] ? composeLayers(frames[prevIdx].layers) : undefined,
-      onionSkinNext: frames[nextIdx] ? composeLayers(frames[nextIdx].layers) : undefined,
+    
+    const mergeOnionGrids = (direction: 'prev' | 'next') => {
+        const composite = createEmptyGrid();
+        for (let i = 1; i <= onionSkinRange; i++) {
+            const idx = direction === 'prev' 
+                ? (activeFrameIndex - i + frames.length) % frames.length
+                : (activeFrameIndex + i) % frames.length;
+            
+            if (idx === activeFrameIndex) break;
+            if (!frames[idx]) continue;
+            
+            const frameGrid = composeLayers(frames[idx].layers);
+            const decay = Math.pow(0.5, i - 1); 
+            const finalAlpha = onionSkinOpacity * decay;
+
+            frameGrid.forEach((row, y) => row.forEach((color, x) => {
+                if (color && !composite[y][x]) {
+                    composite[y][x] = adjustOpacity(color, finalAlpha);
+                }
+            }));
+        }
+        return composite;
     };
-  }, [frames, activeFrameIndex, onionSkinEnabled]);
+
+    return {
+      onionSkinPrev: mergeOnionGrids('prev'),
+      onionSkinNext: mergeOnionGrids('next'),
+    };
+  }, [frames, activeFrameIndex, onionSkinEnabled, onionSkinOpacity, onionSkinRange]);
 
   const handleImport = useCallback((file: File) => {
     const reader = new FileReader();

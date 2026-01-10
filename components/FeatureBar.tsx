@@ -25,7 +25,11 @@ const FeatureBar: React.FC<FeatureBarProps> = ({
 }) => {
   const { 
     activeTool, brushSize, setBrushSize, drawMode, setDrawMode,
-    onionSkinEnabled, setOnionSkinEnabled, setIsLibraryOpen
+    onionSkinEnabled, setOnionSkinEnabled,
+    onionSkinOpacity, setOnionSkinOpacity,
+    onionSkinRange, setOnionSkinRange,
+    magicWandTolerance, setMagicWandTolerance,
+    setIsLibraryOpen
   } = useEditor();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -83,6 +87,21 @@ const FeatureBar: React.FC<FeatureBarProps> = ({
           </div>
         )}
 
+        {activeTool === 'magicWand' && (
+          <div className="flex items-center space-x-2 animate-in fade-in slide-in-from-left-2 duration-200">
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Tolerance</span>
+            <div className="flex items-center space-x-2 bg-gray-900 px-2 py-1 rounded-lg border border-gray-700">
+              <input 
+                type="range" min="0" max="100" step="1" 
+                value={magicWandTolerance} 
+                onChange={(e) => setMagicWandTolerance(parseInt(e.target.value))}
+                className="w-24 accent-brand-500 bg-gray-700 h-1 rounded-lg cursor-pointer"
+              />
+              <span className="text-[10px] font-mono text-brand-400 w-6">{magicWandTolerance}</span>
+            </div>
+          </div>
+        )}
+
         <div className="h-4 w-px bg-gray-700 mx-2" />
 
         {/* Transform Group */}
@@ -95,16 +114,50 @@ const FeatureBar: React.FC<FeatureBarProps> = ({
 
       {/* Right: Project Actions */}
       <div className="flex items-center space-x-2">
-        <button
-          onClick={() => setOnionSkinEnabled(!onionSkinEnabled)}
-          title="Toggle Onion Skin (O)"
-          className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-            onionSkinEnabled ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
-          }`}
-        >
-          <Layers size={14} />
-          <span className="hidden sm:inline">Onion Skin</span>
-        </button>
+        <div className="flex items-center group relative">
+            <button
+                onClick={() => setOnionSkinEnabled(!onionSkinEnabled)}
+                title="Toggle Onion Skin (O)"
+                className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                    onionSkinEnabled ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+                }`}
+            >
+                <Layers size={14} />
+                <span className="hidden sm:inline">Onion Skin</span>
+            </button>
+
+            {/* Onion Skin Advanced Popover */}
+            {onionSkinEnabled && (
+                <div className="absolute right-0 top-full mt-2 bg-gray-850 border border-gray-700 rounded-xl shadow-2xl p-4 z-50 min-w-[200px] opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all translate-y-2 group-hover:translate-y-0">
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                                <span className="text-[9px] font-black text-gray-500 uppercase">Range</span>
+                                <span className="text-[10px] text-brand-400 font-mono">{onionSkinRange} frames</span>
+                            </div>
+                            <input 
+                                type="range" min="1" max="5" step="1"
+                                value={onionSkinRange}
+                                onChange={(e) => setOnionSkinRange(parseInt(e.target.value))}
+                                className="w-full accent-brand-500 bg-gray-700 h-1 rounded-lg cursor-pointer"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                                <span className="text-[9px] font-black text-gray-500 uppercase">Opacity</span>
+                                <span className="text-[10px] text-brand-400 font-mono">{Math.round(onionSkinOpacity * 100)}%</span>
+                            </div>
+                            <input 
+                                type="range" min="0.1" max="0.8" step="0.05"
+                                value={onionSkinOpacity}
+                                onChange={(e) => setOnionSkinOpacity(parseFloat(e.target.value))}
+                                className="w-full accent-brand-500 bg-gray-700 h-1 rounded-lg cursor-pointer"
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
 
         <div className="h-4 w-px bg-gray-700 mx-2" />
 

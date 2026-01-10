@@ -283,3 +283,41 @@ export const generateStructuredAnimation = async (
         return null;
     }
 };
+
+export const refineSketch = async (imageBase64: string, prompt: string): Promise<string | null> => {
+    if (!apiKey) return null;
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: {
+                parts: [
+                    {
+                        inlineData: {
+                            data: imageBase64.split(',')[1],
+                            mimeType: 'image/png'
+                        }
+                    },
+                    { text: `The provided image is a rough sketch of a cursor. Please refine it into a clean, professional 32x32 pixel art cursor. Add shading, highlights, and sharpen the edges. Description: "${prompt}". Output must be a square image.` }
+                ]
+            },
+            config: {
+                imageConfig: {
+                    aspectRatio: "1:1"
+                }
+            }
+        });
+        
+        const candidates = response.candidates;
+        if (candidates && candidates.length > 0) {
+            for (const part of candidates[0].content.parts) {
+                if (part.inlineData && part.inlineData.data) {
+                    return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                }
+            }
+        }
+        return null;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+};

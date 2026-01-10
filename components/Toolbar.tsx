@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { MousePointer2, Eraser, Pipette, Crosshair, Grid3X3, PaintBucket, BoxSelect, Wand2, Minus, Square, Circle, ChevronRight } from 'lucide-react';
+import { MousePointer2, Eraser, Pipette, Crosshair, Grid3X3, PaintBucket, BoxSelect, Wand2, Minus, Square, Circle, ChevronRight, Lasso } from 'lucide-react';
 import { ToolType } from '../types';
 import { useEditor } from '../contexts/EditorContext';
 
@@ -11,6 +11,7 @@ const Toolbar: React.FC = () => {
 
   const tools: { id: ToolType; icon: React.ReactNode; label: string }[] = [
     { id: 'select', icon: <BoxSelect size={20} />, label: 'Box Select (S)' },
+    { id: 'lasso', icon: <Lasso size={20} />, label: 'Lasso (L)' },
     { id: 'magicWand', icon: <Wand2 size={20} />, label: 'Magic Wand (W)' },
     { id: 'pen', icon: <MousePointer2 size={20} />, label: 'Pen (P)' },
     { id: 'eraser', icon: <Eraser size={20} />, label: 'Eraser (E)' },

@@ -10,6 +10,7 @@ const LayersPanel: React.FC = () => {
     addLayer,
     toggleLayerVisibility,
     updateLayerOpacity,
+    updateLayerBlendMode,
     deleteLayer,
     moveLayer,
     frames // Just to trigger re-renders
@@ -47,10 +48,28 @@ const LayersPanel: React.FC = () => {
                 </div>
               </div>
               {activeLayerId === layer.id && (
-                <div className="mt-2 px-1 flex items-center space-x-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                  <span className="text-[9px] text-gray-500 font-bold uppercase w-12">Opacity</span>
-                  <input type="range" min="0" max="1" step="0.01" value={layer.opacity ?? 1} onChange={(e) => updateLayerOpacity(layer.id, parseFloat(e.target.value))} onClick={(e) => e.stopPropagation()} className="flex-1 h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-brand-500" />
-                  <span className="text-[9px] text-brand-400 font-mono w-6 text-right">{Math.round((layer.opacity ?? 1) * 100)}%</span>
+                <div className="mt-2 px-1 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[9px] text-gray-500 font-bold uppercase w-12">Opacity</span>
+                    <input type="range" min="0" max="1" step="0.01" value={layer.opacity ?? 1} onChange={(e) => updateLayerOpacity(layer.id, parseFloat(e.target.value))} onClick={(e) => e.stopPropagation()} className="flex-1 h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-brand-500" />
+                    <span className="text-[9px] text-brand-400 font-mono w-6 text-right">{Math.round((layer.opacity ?? 1) * 100)}%</span>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[9px] text-gray-500 font-bold uppercase w-12">Blend</span>
+                    <select 
+                        value={layer.blendMode || 'normal'} 
+                        onChange={(e) => updateLayerBlendMode(layer.id, e.target.value as any)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex-1 bg-gray-900 border border-gray-700 rounded text-[9px] text-gray-300 outline-none focus:ring-1 focus:ring-brand-500 py-0.5"
+                    >
+                        <option value="normal">Normal</option>
+                        <option value="multiply">Multiply</option>
+                        <option value="screen">Screen</option>
+                        <option value="overlay">Overlay</option>
+                        <option value="additive">Additive (Linear Dodge)</option>
+                    </select>
+                  </div>
                 </div>
               )}
             </div>

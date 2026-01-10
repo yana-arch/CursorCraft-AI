@@ -13,9 +13,11 @@ const Timeline: React.FC = () => {
     addFrame,
     deleteFrame,
     duplicateFrame,
+    reorderFrames
   } = useProject();
 
   const { isPlaying, setIsPlaying } = useEditor();
+  const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
 
   const framesWithPreview = useMemo(() => {
       return frames.map(f => ({
@@ -57,7 +59,26 @@ const Timeline: React.FC = () => {
       </div>
       <div className="flex-1 flex items-center overflow-x-auto px-4 space-x-3 p-3 custom-scrollbar">
         {framesWithPreview.map((frame, index) => (
-            <div key={frame.id} onClick={() => setActiveFrameIndex(index)} className={`relative group flex-shrink-0 cursor-pointer transition-all duration-200 ${activeFrameIndex === index ? 'ring-2 ring-brand-500 scale-105' : 'ring-1 ring-gray-700 hover:ring-gray-500 opacity-80 hover:opacity-100'} rounded-md bg-gray-900 w-16 h-16 flex items-center justify-center`}>
+            <div 
+                key={frame.id} 
+                onClick={() => setActiveFrameIndex(index)} 
+                draggable
+                onDragStart={() => setDraggedIndex(index)}
+                onDragOver={(e) => {
+                    e.preventDefault();
+                    if (draggedIndex === null || draggedIndex === index) return;
+                }}
+                onDrop={(e) => {
+                    e.preventDefault();
+                    if (draggedIndex !== null && draggedIndex !== index) {
+                        reorderFrames(draggedIndex, index);
+                    }
+                    setDraggedIndex(null);
+                }}
+                className={`relative group flex-shrink-0 cursor-pointer transition-all duration-200 ${
+                    activeFrameIndex === index ? 'ring-2 ring-brand-500 scale-105' : 'ring-1 ring-gray-700 hover:ring-gray-500 opacity-80 hover:opacity-100'
+                } ${draggedIndex === index ? 'opacity-20' : ''} rounded-md bg-gray-900 w-16 h-16 flex items-center justify-center`}
+            >
                 <img src={renderMiniPreview(frame.grid)} className="w-12 h-12 image-pixelated object-contain" alt={`Frame ${index + 1}`} />
                 <div className="absolute top-1 left-1 bg-black/50 text-[8px] px-1 rounded text-white font-mono">{index + 1}</div>
             </div>
