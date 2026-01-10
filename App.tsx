@@ -8,7 +8,7 @@ import ProjectManager from "./components/ProjectManager";
 import SettingsModal from "./components/SettingsModal";
 import AnimationWizard from "./components/AnimationWizard";
 import { Frame, AnimationParams } from "./types";
-import { composeLayers, createEmptyGrid, createLayer } from "./utils/layerUtils";
+import { composeLayers, createLayer } from "./utils/layerUtils";
 import { generateId, processImageToGrid } from "./utils/imageUtils";
 import { calculateAnimationFrames } from "./utils/animationGenerator";
 import { SavedProject } from "./utils/storage";
@@ -21,16 +21,16 @@ import { EditorProvider, useEditor } from "./contexts/EditorContext";
 
 function AppInner() {
   const {
-    activeTool, setActiveTool, setPrimaryColor, setSecondaryColor,
-    isLibraryOpen, setIsLibraryOpen, isSettingsOpen, setIsSettingsOpen, setIsWizardOpen,
-    onionSkinEnabled, setOnionSkinEnabled, setPathPivot, setPathPoints, setIsPickingPivot, setIsPickingPath,
-    settings, saveSettings, selection, setSelection,
+    setActiveTool, setPrimaryColor, setSecondaryColor,
+    isLibraryOpen, setIsLibraryOpen, setIsWizardOpen, onionSkinEnabled, setOnionSkinEnabled,
+    setPathPivot, setPathPoints, setIsPickingPivot, setIsPickingPath,
+    settings, selection, setSelection, pathPivot
   } = useEditor();
 
   const {
-    frames, setFrames, undo, redo, resetFrames, canUndo, canRedo,
-    activeFrameIndex, setActiveFrameIndex, activeLayerId, setActiveLayerId, activeFrame,
-    updateActiveLayerGrid, hotspot, setHotspot,
+    frames, setFrames, resetFrames, activeFrameIndex, setActiveFrameIndex, 
+    activeLayerId, setActiveLayerId,
+    setHotspot, undo, redo, canUndo, canRedo
   } = useProject();
 
   const { handleAIAddFrames, handleApplyGeneratedImage, handleAIStructuredData } = useAIWorkflow();
@@ -85,7 +85,7 @@ function AppInner() {
 
   const handleGenerateAnimation = useCallback((params: AnimationParams) => {
     if (!selection) return;
-    const newFrames = calculateAnimationFrames(frames, activeFrameIndex, activeLayerId, selection, params, settings, useEditor().pathPivot);
+    const newFrames = calculateAnimationFrames(frames, activeFrameIndex, activeLayerId, selection, params, settings, pathPivot);
     setFrames(newFrames);
     setSelection(null);
     setIsWizardOpen(false);
@@ -93,19 +93,19 @@ function AppInner() {
     setPathPoints([]);
     setIsPickingPivot(false);
     setIsPickingPath(false);
-  }, [selection, frames, activeFrameIndex, activeLayerId, settings, setFrames, setSelection, setIsWizardOpen, setPathPivot, setPathPoints, setIsPickingPivot, setIsPickingPath]);
+  }, [selection, frames, activeFrameIndex, settings, pathPivot, setFrames, setSelection, setIsWizardOpen, setPathPivot, setPathPoints, setIsPickingPivot, setIsPickingPath]);
 
   return (
     <div className="flex h-screen w-screen bg-gray-900 text-gray-100 font-sans overflow-hidden">
       <Toolbar onExport={handleExport} onExportInstaller={handleExportInstaller} onImport={handleImport} onTransform={() => {}} />
       <div className="flex-1 flex flex-col min-w-0">
-        <Header undo={undo} redo={redo} canUndo={canUndo} canRedo={canRedo} onOpenSettings={() => setIsSettingsOpen(true)} activeTool={activeTool} />
+        <Header />
         <EditorCanvas onionSkinPrev={onionSkinPrev} onionSkinNext={onionSkinNext} onRotateSelection={() => {}} onOpenWizard={() => setIsWizardOpen(true)} />
         <Timeline />
       </div>
       <RightSidebar handleAIAddFrames={handleAIAddFrames} handleApplyGeneratedImage={handleApplyGeneratedImage} handleAIStructuredData={handleAIStructuredData} />
       <ProjectManager isOpen={isLibraryOpen} onClose={() => setIsLibraryOpen(false)} onLoadProject={handleLoadProject} onLoadPreset={handleLoadPreset} />
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} settings={settings} onSave={saveSettings} />
+      <SettingsModal />
       <AnimationWizard onGenerate={handleGenerateAnimation} />
     </div>
   );

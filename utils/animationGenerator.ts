@@ -28,14 +28,21 @@ export const calculateAnimationFrames = (
 ): Frame[] => {
     const {
         framesCount,
+        enableRotation,
         stepX,
         stepY,
+        enableMovement,
         stepAngle,
+        enableScale,
         stepScale,
+        enableOpacity,
         stepOpacity,
+        enableHue,
         stepHue,
         easing,
         isBoomerang,
+        rotationPivotMode,
+        rotationCustomPivot,
         enableSway,
         swayAngle,
         swayPeriod,
@@ -54,6 +61,10 @@ export const calculateAnimationFrames = (
     if (layerIndex === -1) return sourceFrames;
 
     const getPositionAtT = (t: number): { x: number, y: number } => {
+        if (!enableMovement) {
+            return { x: selection.x, y: selection.y };
+        }
+
         if (!pathPoints || pathPoints.length === 0) {
             return {
                 x: selection.x + stepX * t * (framesCount - 1),
@@ -62,18 +73,12 @@ export const calculateAnimationFrames = (
         }
 
         // Interpolate through pathPoints
-        // t is 0 to 1
-        const totalSegments = pathPoints.length; // Including start position as point 0?
-        // Let's assume pathPoints are targets. Start is selection.x/y.
         const allPoints = [{ x: selection.x, y: selection.y }, ...pathPoints];
         const segmentsCount = allPoints.length - 1;
-        
         const scaledT = t * segmentsCount;
         const index = Math.min(Math.floor(scaledT), segmentsCount - 1);
         const segmentT = scaledT - index;
-        
-        const p1 = allPoints[index];
-        const p2 = allPoints[index + 1];
+        const p1 = allPoints[index], p2 = allPoints[index + 1];
         
         return {
             x: p1.x + (p2.x - p1.x) * segmentT,
@@ -84,21 +89,21 @@ export const calculateAnimationFrames = (
     const createTransformedLayer = (step: number) => {
         const t = step / (framesCount - 1);
         let progressT = t;
-        
-        if (isBoomerang) {
-            progressT = t <= 0.5 ? t * 2 : (1 - t) * 2;
-        }
-
+        if (isBoomerang) progressT = t <= 0.5 ? t * 2 : (1 - t) * 2;
         const easedT = getEasingValue(progressT, easing);
         
-        let currentAngle = selection.angle + stepAngle * easedT * (framesCount - 1);
+        let currentAngle = selection.angle;
+        if (enableRotation) {
+            currentAngle += stepAngle * easedT * (framesCount - 1);
+        }
+
         const pos = getPositionAtT(easedT);
         let currentX = pos.x;
         let currentY = pos.y;
         
-        let currentScale = Math.pow(stepScale, easedT * (framesCount - 1)),
-            currentOpacity = Math.pow(stepOpacity, easedT * (framesCount - 1));
-        let currentHue = stepHue * easedT * (framesCount - 1);
+        let currentScale = enableScale ? Math.pow(stepScale, easedT * (framesCount - 1)) : 1.0;
+        let currentOpacity = enableOpacity ? Math.pow(stepOpacity, easedT * (framesCount - 1)) : 1.0;
+        let currentHue = enableHue ? stepHue * easedT * (framesCount - 1) : 0;
 
         if (enableSway)
             currentAngle += swayAngle * Math.sin((2 * Math.PI * step) / swayPeriod);
@@ -131,6 +136,21 @@ export const calculateAnimationFrames = (
                 x: pathPivot.x - selection.x,
                 y: pathPivot.y - selection.y,
             };
+        }
+
+        if (!pivot) {
+            const w = selection.w;
+            const h = selection.h;
+            if (rotationPivotMode === '1x1') {
+                pivot = { x: Math.floor((w - 1) / 2), y: Math.floor((h - 1) / 2) };
+            } else if (rotationPivotMode === '2x2') {
+                pivot = { x: Math.floor((w - 1) / 2) + 0.5, y: Math.floor((h - 1) / 2) + 0.5 };
+            } else if (rotationPivotMode === 'custom' && rotationCustomPivot) {
+                pivot = {
+                    x: rotationCustomPivot.x - selection.x,
+                    y: rotationCustomPivot.y - selection.y
+                };
+            }
         }
 
         if (Math.abs(currentAngle % 360) > 0.1 || enableSway || enablePathDeform)

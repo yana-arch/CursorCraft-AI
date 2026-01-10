@@ -1,24 +1,12 @@
 import React from 'react';
 import { Undo, Redo, Settings as SettingsIcon } from 'lucide-react';
-import { ToolType } from '../types';
+import { useProject } from '../contexts/ProjectContext';
+import { useEditor } from '../contexts/EditorContext';
 
-interface HeaderProps {
-    undo: () => void;
-    redo: () => void;
-    canUndo: boolean;
-    canRedo: boolean;
-    onOpenSettings: () => void;
-    activeTool: ToolType;
-}
+const Header: React.FC = () => {
+    const { undo, redo, canUndo, canRedo } = useProject();
+    const { setIsSettingsOpen, activeTool } = useEditor();
 
-const Header: React.FC<HeaderProps> = ({
-    undo,
-    redo,
-    canUndo,
-    canRedo,
-    onOpenSettings,
-    activeTool,
-}) => {
     return (
         <header className="h-12 border-b border-gray-800 flex items-center px-4 justify-between bg-gray-850 shrink-0">
             <div className="flex items-center space-x-2">
@@ -50,19 +38,15 @@ const Header: React.FC<HeaderProps> = ({
                 </div>
                 <div className="flex items-center space-x-1 border-l border-gray-700 pl-4">
                     <button
-                        onClick={onOpenSettings}
+                        onClick={() => setIsSettingsOpen(true)}
                         className="p-1.5 text-gray-400 hover:text-white rounded hover:bg-gray-700 transition-colors"
                         title="Settings"
                     >
                         <SettingsIcon size={16} />
                     </button>
                 </div>
-                <div className="text-xs text-gray-500 border-l border-gray-700 pl-4">
-                    {activeTool === "select" && "Select (S)"}{" "}
-                    {activeTool === "magicWand" && "Magic Wand (W)"}{" "}
-                    {activeTool === "pen" && "Pen (P)"}{" "}
-                    {activeTool === "eraser" && "Eraser (E)"}{" "}
-                    {activeTool === "fill" && "Fill (F)"}
+                <div className="text-xs text-gray-500 border-l border-gray-700 pl-4 uppercase font-mono">
+                    {activeTool}
                 </div>
             </div>
         </header>

@@ -19,8 +19,29 @@ const AnimationWizard: React.FC<{ onGenerate: (params: AnimationParams) => void 
 
     const [activeTab, setActiveTab] = useState<TabType>('general');
     const [params, setParams] = useState<AnimationParams>({
-        framesCount: settings.defaultFramesCount, stepX: 0, stepY: 0, stepAngle: 0, stepScale: 1.0, stepOpacity: 1.0, stepHue: 0,
-        easing: 'linear', isLoop: false, isBoomerang: false, enableSway: false, swayAngle: 15, swayPeriod: 8, swayPivot: 'left', swayRigidArea: 0, enablePathDeform: false, pathPoints: []
+        framesCount: settings.defaultFramesCount, 
+        enableRotation: false,
+        stepAngle: 0, 
+        enableMovement: false,
+        stepX: 0, 
+        stepY: 0, 
+        enableScale: false,
+        stepScale: 1.0, 
+        enableOpacity: false,
+        stepOpacity: 1.0, 
+        enableHue: false,
+        stepHue: 0,
+        easing: 'linear', 
+        isLoop: false, 
+        isBoomerang: false, 
+        rotationPivotMode: 'auto',
+        enableSway: false, 
+        swayAngle: 15, 
+        swayPeriod: 8, 
+        swayPivot: 'left', 
+        swayRigidArea: 0, 
+        enablePathDeform: false, 
+        pathPoints: []
     });
 
     useEffect(() => { setParams(prev => ({ ...prev, pathPoints })); }, [pathPoints]);

@@ -51,35 +51,86 @@ const AnimationPreview: React.FC<AnimationPreviewProps> = ({ selection, params, 
         let progressT = t;
         if (params.isBoomerang) progressT = t <= 0.5 ? t * 2 : (1 - t) * 2;
         const easedT = getEasingValue(progressT, params.easing);
-        const currentAngle = (selection.angle || 0) + params.stepAngle * easedT * (params.framesCount - 1);
-        let currentX = selection.x + params.stepX * easedT * (params.framesCount - 1);
-        let currentY = selection.y + params.stepY * easedT * (params.framesCount - 1);
         
-        if (params.pathPoints && params.pathPoints.length > 0) {
-            const allPoints = [{ x: selection.x, y: selection.y }, ...params.pathPoints];
-            const segmentsCount = allPoints.length - 1;
-            const scaledT = easedT * segmentsCount;
-            const idx = Math.min(Math.floor(scaledT), segmentsCount - 1);
-            const segmentT = scaledT - idx;
-            const p1 = allPoints[idx], p2 = allPoints[idx + 1];
-            currentX = p1.x + (p2.x - p1.x) * segmentT;
-            currentY = p1.y + (p2.y - p1.y) * segmentT;
+        let currentAngle = (selection.angle || 0);
+        if (params.enableRotation) {
+            currentAngle += params.stepAngle * easedT * (params.framesCount - 1);
         }
         
-        const currentScale = Math.pow(params.stepScale, easedT * (params.framesCount - 1));
-        const currentOpacity = Math.pow(params.stepOpacity, easedT * (params.framesCount - 1));
-        const currentHue = params.stepHue * easedT * (params.framesCount - 1);
+        let currentX = selection.x;
+        let currentY = selection.y;
+
+        if (params.enableMovement) {
+            if (params.pathPoints && params.pathPoints.length > 0) {
+                const allPoints = [{ x: selection.x, y: selection.y }, ...params.pathPoints];
+                const segmentsCount = allPoints.length - 1;
+                const scaledT = easedT * segmentsCount;
+                const idx = Math.min(Math.floor(scaledT), segmentsCount - 1);
+                const segmentT = scaledT - idx;
+                const p1 = allPoints[idx], p2 = allPoints[idx + 1];
+                currentX = p1.x + (p2.x - p1.x) * segmentT;
+                currentY = p1.y + (p2.y - p1.y) * segmentT;
+            } else {
+                currentX += params.stepX * easedT * (params.framesCount - 1);
+                currentY += params.stepY * easedT * (params.framesCount - 1);
+            }
+        }
+
+        const currentScale = params.enableScale ? Math.pow(params.stepScale, easedT * (params.framesCount - 1)) : 1.0;
+        const currentOpacity = params.enableOpacity ? Math.pow(params.stepOpacity, easedT * (params.framesCount - 1)) : 1.0;
+        const currentHue = params.enableHue ? params.stepHue * easedT * (params.framesCount - 1) : 0;
         let swayRotation = params.enableSway ? params.swayAngle * Math.sin((2 * Math.PI * step) / params.swayPeriod) : 0;
         
+        let finalRotate = (currentAngle - (selection.angle || 0)) + swayRotation;
+
+        // Determine CSS transform origin based on pivot
+        let transformOrigin = '50% 50%';
+        if (params.enablePathDeform && pathPivot) {
+            const ox = ((pathPivot.x - selection.x) / selection.w) * 100;
+            const oy = ((pathPivot.y - selection.y) / selection.h) * 100;
+            transformOrigin = `${ox}% ${oy}%`;
+        } else if (params.enableSway) {
+            switch (params.swayPivot) {
+                case "left": transformOrigin = '0% 50%'; break;
+                case "right": transformOrigin = '100% 50%'; break;
+                case "top": transformOrigin = '50% 0%'; break;
+                case "bottom": transformOrigin = '50% 100%'; break;
+                case "top-left": transformOrigin = '0% 0%'; break;
+                case "top-right": transformOrigin = '100% 0%'; break;
+                case "bottom-left": transformOrigin = '0% 100%'; break;
+                case "bottom-right": transformOrigin = '100% 100%'; break;
+            }
+        } else if (params.enableRotation) {
+            const w = selection.w;
+            const h = selection.h;
+            let cx = (w - 1) / 2;
+            let cy = (h - 1) / 2;
+            
+            if (params.rotationPivotMode === '1x1') {
+                cx = Math.floor((w - 1) / 2);
+                cy = Math.floor((h - 1) / 2);
+            } else if (params.rotationPivotMode === '2x2') {
+                cx = Math.floor((w - 1) / 2) + 0.5;
+                cy = Math.floor((h - 1) / 2) + 0.5;
+            }
+            
+            // In CSS, coordinate 0 is the start of pixel 0.
+            // Mathematical coordinate X in our grid maps to X + 0.5 in CSS box.
+            const ox = ((cx + 0.5) / w) * 100;
+            const oy = ((cy + 0.5) / h) * 100;
+            transformOrigin = `${ox}% ${oy}%`;
+        }
+
         return { 
             x: (currentX - selection.x) * 4, 
             y: (currentY - selection.y) * 4, 
-            rotate: (currentAngle - (selection.angle || 0)) + swayRotation, 
+            rotate: finalRotate, 
             scale: currentScale, 
             opacity: currentOpacity, 
-            hue: currentHue 
+            hue: currentHue,
+            transformOrigin
         };
-    }, [frame, params, selection]);
+    }, [frame, params, selection, pathPivot]);
 
     return (
         <div className="w-[320px] bg-gray-900/50 flex flex-col p-8 items-center border-l border-gray-700 shrink-0">
@@ -98,6 +149,7 @@ const AnimationPreview: React.FC<AnimationPreviewProps> = ({ selection, params, 
                         width: selection.w * 4,
                         height: selection.h * 4,
                         transform: `translate(${currentTransform.x}px, ${currentTransform.y}px) rotate(${currentTransform.rotate}deg) scale(${currentTransform.scale})`,
+                        transformOrigin: currentTransform.transformOrigin,
                         opacity: currentTransform.opacity,
                         filter: `hue-rotate(${currentTransform.hue}deg)`,
                         imageRendering: 'pixelated'

@@ -60,15 +60,22 @@ export interface AnimationSettings {
 
 export interface AnimationParams {
     framesCount: number;
+    enableRotation: boolean;
+    stepAngle: number;
+    enableMovement: boolean;
     stepX: number;
     stepY: number;
-    stepAngle: number;
+    enableScale: boolean;
     stepScale: number;
+    enableOpacity: boolean;
     stepOpacity: number;
+    enableHue: boolean;
     stepHue: number;
     easing: EasingType;
     isLoop: boolean;
     isBoomerang: boolean; // New: Move back to start
+    rotationPivotMode: 'auto' | '1x1' | '2x2' | 'custom';
+    rotationCustomPivot?: Point;
     // Special Effects
     enableSway: boolean;
     swayAngle: number;
