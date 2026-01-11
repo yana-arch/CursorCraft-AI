@@ -66,8 +66,8 @@ export const useShortcuts = ({
                 case "r":
                     if (activeTool !== 'rect') onTransform('rotate');
                     break;
-                case "h":
-                    if (activeTool !== 'hotspot') onTransform('flipH');
+                case "x":
+                    onTransform('flipH');
                     break;
                 case "v":
                     onTransform('flipV');
@@ -81,5 +81,5 @@ export const useShortcuts = ({
         };
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [undo, redo, setActiveTool, setOnionSkinEnabled, setIsPlaying]);
+    }, [undo, redo, setActiveTool, setOnionSkinEnabled, setIsPlaying, activeTool, onTransform]);
 };
