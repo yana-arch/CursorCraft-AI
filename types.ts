@@ -1,5 +1,7 @@
 
 
+import { CursorRole } from './utils/cursorRoles';
+
 export type ToolType = 'pen' | 'eraser' | 'picker' | 'fill' | 'hotspot' | 'select' | 'magicWand' | 'line' | 'rect' | 'circle' | 'lasso';
 
 export type DrawMode = 'stroke' | 'fill';
@@ -31,6 +33,7 @@ export interface Frame {
 
 export interface CursorProject {
   name: string;
+  role?: CursorRole;
   frames: Frame[];
   activeFrameIndex: number;
   hotspot: Point;

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
 import { Frame, GridData, Point, BlendMode } from '../types';
+import { CursorRole } from '../utils/cursorRoles';
 import { useHistory } from '../hooks/useHistory';
 import { createLayer } from '../utils/layerUtils';
 import { generateId } from '../utils/imageUtils';
@@ -17,6 +18,8 @@ interface ProjectContextType {
     foregroundGrid: GridData;
     hotspot: Point;
     setHotspot: (p: Point) => void;
+    role: CursorRole | undefined;
+    setRole: (r: CursorRole | undefined) => void;
     
     // Actions
     updateActiveLayerGrid: (newGridOrUpdater: GridData | ((prev: GridData) => GridData)) => void;
@@ -66,6 +69,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     const [activeFrameIndex, setActiveFrameIndex] = useState(0);
     const [activeLayerId, setActiveLayerId] = useState<string>(initialLayer.id);
     const [hotspot, setHotspot] = useState<Point>({ x: 0, y: 0 });
+    const [role, setRole] = useState<CursorRole | undefined>(undefined);
 
     const activeFrame = frames[activeFrameIndex] || frames[0];
 
@@ -234,6 +238,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         frames, setFrames, activeFrameIndex, setActiveFrameIndex, activeLayerId, setActiveLayerId,
         activeFrame, activeLayerGrid, backgroundGrid, foregroundGrid,
         hotspot, setHotspot,
+        role, setRole,
         updateActiveLayerGrid, addLayer, deleteLayer, toggleLayerVisibility, updateLayerOpacity, updateLayerBlendMode, moveLayer,
         addFrame, duplicateFrame, deleteFrame, reorderFrames, resetFrames,
         undo, redo, canUndo, canRedo

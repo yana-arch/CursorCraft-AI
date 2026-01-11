@@ -1,10 +1,12 @@
 import { CursorProject, Frame, Point } from '../types';
+import { CursorRole } from './cursorRoles';
 
 const STORAGE_KEY = 'cursorcraft_projects';
 
 export interface SavedProject {
     id: string;
     name: string;
+    role?: CursorRole;
     updatedAt: number;
     data: {
         frames: Frame[];
@@ -30,6 +32,7 @@ export const saveProject = (
     hotspot: Point,
     primaryColor: string,
     secondaryColor: string,
+    role?: CursorRole,
     existingId?: string
 ): SavedProject => {
     const projects = getSavedProjects();
@@ -38,6 +41,7 @@ export const saveProject = (
     const newProject: SavedProject = {
         id: existingId || Math.random().toString(36).substr(2, 9),
         name,
+        role,
         updatedAt: now,
         data: {
             frames,

@@ -33,7 +33,7 @@ function AppInner() {
   const {
     frames, setFrames, resetFrames, activeFrameIndex, setActiveFrameIndex, 
     activeLayerId, setActiveLayerId,
-    setHotspot, undo, redo, canUndo, canRedo,
+    setHotspot, role, setRole, undo, redo, canUndo, canRedo,
     updateActiveLayerGrid,
   } = useProject();
 
@@ -166,11 +166,12 @@ function AppInner() {
   const handleLoadProject = useCallback((project: SavedProject) => {
     resetFrames(project.data.frames);
     setHotspot(project.data.hotspot);
+    setRole(project.role);
     setPrimaryColor(project.data.primaryColor);
     setSecondaryColor(project.data.secondaryColor);
     setActiveFrameIndex(0);
     if (project.data.frames.length > 0) setActiveLayerId(project.data.frames[0].layers[0].id);
-  }, [resetFrames, setHotspot, setPrimaryColor, setSecondaryColor, setActiveFrameIndex, setActiveLayerId]);
+  }, [resetFrames, setHotspot, setRole, setPrimaryColor, setSecondaryColor, setActiveFrameIndex, setActiveLayerId]);
 
   const handleLoadPreset = useCallback((presetFrames: Frame[]) => {
     const newFrames = presetFrames.map((f) => ({ ...f, id: generateId(), layers: f.layers.map((l) => ({ ...l, id: generateId() })) }));
